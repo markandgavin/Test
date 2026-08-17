@@ -202,6 +202,12 @@
     });
   }
 
+  // True when running inside an iframe (e.g. a hosted preview), where the
+  // browser blocks a page from saving a file to the device.
+  function isEmbedded() {
+    try { return window.self !== window.top; } catch (e) { return true; }
+  }
+
   // Read a File, downscale via canvas, return { dataURL, w, h } (JPEG).
   function fileToPhoto(file, cb) {
     var reader = new FileReader();
@@ -422,6 +428,10 @@
     });
     card.querySelector("#back").addEventListener("click", function () { go(REVIEW_INDEX - 1); });
     card.querySelector("#download").addEventListener("click", downloadPdf);
+    if (isEmbedded()) {
+      var note = el('<p class="hint" style="margin-top:12px;text-align:center">Hosted preview — to save the PDF, open the standalone file version.</p>');
+      card.querySelector(".nav").insertAdjacentElement("afterend", note);
+    }
     card.querySelector("#restart").addEventListener("click", function () {
       if (!confirm("Start a new machine? This clears the current photos and details.")) return;
       state = { siteNumber: "", serialLast6: "", photos: {} };
