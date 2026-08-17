@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f172a">
+<title>Vending Machine QC</title>
+<style>
+  /* ---- Palette (explicit light theme; this is a standalone app page) ---- */
+  :root {
+    --bg: #f1f5f9;
+    --card: #ffffff;
+    --ink: #0f172a;
+    --muted: #64748b;
+    --line: #e2e8f0;
+    --brand: #2563eb;
+    --brand-ink: #ffffff;
+    --ok: #16a34a;
+    --ok-bg: #dcfce7;
+    --danger: #dc2626;
+    --danger-bg: #fee2e2;
+    --shadow: 0 1px 3px rgba(15, 23, 42, .08), 0 1px 2px rgba(15, 23, 42, .06);
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.45;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  /* ---- App shell ---- */
+  .app {
+    max-width: 560px;
+    margin: 0 auto;
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+
+  header.bar {
+    padding: 16px 18px 12px;
+  }
+  header.bar h1 {
+    font-size: 17px;
+    margin: 0;
+    letter-spacing: .2px;
+  }
+  .progress {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .progress .track {
+    flex: 1;
+    height: 6px;
+    border-radius: 999px;
+    background: var(--line);
+    overflow: hidden;
+  }
+  .progress .fill {
+    height: 100%;
+    width: 0%;
+    background: var(--brand);
+    border-radius: 999px;
+    transition: width .25s ease;
+  }
+
+  main {
+    flex: 1;
+    padding: 6px 18px 18px;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+    padding: 20px;
+  }
+
+  .step-label {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    color: var(--brand);
+    margin: 0 0 4px;
+  }
+  h2.title {
+    margin: 0 0 4px;
+    font-size: 22px;
+  }
+  p.hint {
+    margin: 0 0 18px;
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  label.field {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0 0 6px;
+  }
+  input[type="text"] {
+    width: 100%;
+    font-size: 18px;
+    padding: 14px 14px;
+    border: 1.5px solid var(--line);
+    border-radius: 12px;
+    background: #fff;
+    color: var(--ink);
+    outline: none;
+  }
+  input[type="text"]:focus { border-color: var(--brand); }
+  .mono { font-variant-ligatures: none; letter-spacing: .5px; }
+
+  .error {
+    color: var(--danger);
+    font-size: 13px;
+    margin: 8px 0 0;
+    min-height: 16px;
+  }
+
+  /* ---- Photo capture ---- */
+  .capture {
+    margin-top: 6px;
+  }
+  .capture input[type="file"] { display: none; }
+  .shot {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .preview {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    border-radius: 14px;
+    border: 1.5px dashed var(--line);
+    background: #f8fafc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    overflow: hidden;
+    text-align: center;
+    padding: 12px;
+    font-size: 14px;
+  }
+  .preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .preview.filled { border-style: solid; border-color: var(--ok); }
+
+  /* ---- Buttons ---- */
+  .btn {
+    -webkit-appearance: none;
+    appearance: none;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    padding: 15px 18px;
+    cursor: pointer;
+    width: 100%;
+    text-align: center;
+  }
+  .btn:disabled { opacity: .45; cursor: default; }
+  .btn.primary { background: var(--brand); color: var(--brand-ink); }
+  .btn.ghost { background: #fff; color: var(--ink); border: 1.5px solid var(--line); }
+  .btn.ok { background: var(--ok); color: #fff; }
+  .btn.small { width: auto; padding: 11px 16px; font-size: 14px; }
+
+  .nav {
+    display: flex;
+    gap: 12px;
+    margin-top: 18px;
+  }
+  .nav .btn { flex: 1; }
+
+  /* ---- Review list ---- */
+  .summary-line {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 15px;
+  }
+  .summary-line .k { color: var(--muted); }
+  .summary-line .v { font-weight: 600; text-align: right; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-top: 16px;
+  }
+  .tile {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+    background: #fff;
+  }
+  .tile .thumb {
+    aspect-ratio: 4 / 3;
+    background: #f1f5f9;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--muted); font-size: 12px;
+  }
+  .tile .thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .tile .cap {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 10px; font-size: 13px; font-weight: 600;
+  }
+  .badge {
+    font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px;
+  }
+  .badge.have { background: var(--ok-bg); color: var(--ok); }
+  .badge.missing { background: var(--danger-bg); color: var(--danger); }
+
+  /* ---- Print report (hidden on screen) ---- */
+  #report { display: none; }
+
+  @media print {
+    @page { margin: 12mm; }
+    body { background: #fff; }
+    .app { display: none !important; }
+    #report { display: block !important; }
+
+    .rpt-header { margin-bottom: 8mm; border-bottom: 2px solid #0f172a; padding-bottom: 5mm; }
+    .rpt-header h1 { margin: 0 0 4mm; font-size: 22px; }
+    .rpt-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 3mm 8mm; font-size: 13px; }
+    .rpt-meta .k { color: #475569; }
+    .rpt-meta .v { font-weight: 700; }
+
+    .rpt-photo { page-break-inside: avoid; break-inside: avoid; page-break-before: always; }
+    .rpt-photo h2 { font-size: 16px; margin: 0 0 3mm; }
+    .rpt-photo .frame {
+      width: 100%; height: 220mm; display: flex; align-items: center; justify-content: center;
+      border: 1px solid #cbd5e1;
+    }
+    .rpt-photo img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    .rpt-photo .none { color: #dc2626; font-weight: 700; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+  <header class="bar">
+    <h1>Vending Machine QC</h1>
+    <div class="progress">
+      <span id="stepCount">Start</span>
+      <span class="track"><span class="fill" id="progressFill"></span></span>
+    </div>
+  </header>
+  <main id="screen"><!-- rendered by JS --></main>
+</div>
+
+<!-- Print-only report; built before window.print() -->
+<div id="report"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* -------------------------------------------------------------
+   * Checklist configuration — edit / reorder / add items here.
+   * Each item is one photo capture in the wizard.
+   * ----------------------------------------------------------- */
+  var CHECKLIST = [
+    { id: "peplink",   label: "Peplink" },
+    { id: "optconnect", label: "OptConnect" },
+    { id: "nuc",       label: "Nuc" },
+    { id: "badge",     label: "Badge" },
+    { id: "inside",    label: "Inside" },
+    { id: "outside",   label: "Outside" },
+    { id: "keys",      label: "Keys" },
+    { id: "crate",     label: "Crate with label" }
+  ];
+
+  var MAX_EDGE = 1600; // downscale longest photo edge to keep things light
+
+  /* -------------------------------------------------------------
+   * State
+   * ----------------------------------------------------------- */
+  var state = {
+    site: "",
+    serial: "",
+    photos: {}   // key -> dataURL  (key "serial" for the device photo, plus each checklist id)
+  };
+
+  // Screen indices: 0 = site, 1 = serial, 2 = confirm last4,
+  // 3..(3+N-1) = checklist items, last = review
+  var CHECK_START = 3;
+  var REVIEW_INDEX = CHECK_START + CHECKLIST.length;
+  var TOTAL_STEPS = REVIEW_INDEX; // number of input steps before review
+  var idx = 0;
+
+  var screen = document.getElementById("screen");
+  var stepCount = document.getElementById("stepCount");
+  var progressFill = document.getElementById("progressFill");
+
+  /* -------------------------------------------------------------
+   * Helpers
+   * ----------------------------------------------------------- */
+  function el(html) {
+    var t = document.createElement("template");
+    t.innerHTML = html.trim();
+    return t.content.firstElementChild;
+  }
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  function lastFour(s) {
+    var v = String(s || "").trim();
+    return v.slice(-4).toLowerCase();
+  }
+
+  // Read a File, downscale via canvas, return a JPEG data URL.
+  function fileToDataURL(file, cb) {
+    var reader = new FileReader();
+    reader.onload = function () {
+      var img = new Image();
+      img.onload = function () {
+        var w = img.naturalWidth, h = img.naturalHeight;
+        var scale = Math.min(1, MAX_EDGE / Math.max(w, h));
+        var cw = Math.max(1, Math.round(w * scale));
+        var ch = Math.max(1, Math.round(h * scale));
+        var canvas = document.createElement("canvas");
+        canvas.width = cw; canvas.height = ch;
+        var ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, cw, ch);
+        try {
+          cb(canvas.toDataURL("image/jpeg", 0.82));
+        } catch (e) {
+          cb(reader.result); // fallback to original if canvas is tainted/unavailable
+        }
+      };
+      img.onerror = function () { cb(reader.result); };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function setProgress() {
+    if (idx === 0) {
+      stepCount.textContent = "Start";
+    } else if (idx >= REVIEW_INDEX) {
+      stepCount.textContent = "Review";
+    } else {
+      stepCount.textContent = "Step " + idx + " of " + (TOTAL_STEPS - 1);
+    }
+    var pct = idx <= 0 ? 0 : Math.min(100, Math.round((idx / REVIEW_INDEX) * 100));
+    progressFill.style.width = pct + "%";
+  }
+
+  function go(n) {
+    idx = n;
+    setProgress();
+    render();
+    window.scrollTo(0, 0);
+  }
+
+  /* -------------------------------------------------------------
+   * Photo capture block (reused for the device photo + each item)
+   * ----------------------------------------------------------- */
+  function photoBlock(key, promptText) {
+    var wrap = el(
+      '<div class="capture">' +
+        '<div class="shot">' +
+          '<div class="preview" id="prev-' + key + '">' + esc(promptText) + '</div>' +
+          '<input type="file" accept="image/*" capture="environment" id="file-' + key + '">' +
+          '<button class="btn ghost" type="button" id="take-' + key + '">📷 Take photo</button>' +
+        '</div>' +
+      '</div>'
+    );
+    var input = wrap.querySelector("#file-" + key);
+    var prev = wrap.querySelector("#prev-" + key);
+    var btn = wrap.querySelector("#take-" + key);
+
+    function paint() {
+      if (state.photos[key]) {
+        prev.classList.add("filled");
+        prev.innerHTML = '<img alt="" src="' + state.photos[key] + '">';
+        btn.textContent = "🔄 Retake photo";
+      }
+    }
+    paint();
+
+    btn.addEventListener("click", function () { input.click(); });
+    input.addEventListener("change", function () {
+      var f = input.files && input.files[0];
+      if (!f) return;
+      prev.classList.remove("filled");
+      prev.textContent = "Processing…";
+      fileToDataURL(f, function (url) {
+        state.photos[key] = url;
+        paint();
+        // let dependent controls (e.g. Next button) refresh
+        if (typeof wrap._onchange === "function") wrap._onchange();
+      });
+    });
+    return wrap;
+  }
+
+  /* -------------------------------------------------------------
+   * Screens
+   * ----------------------------------------------------------- */
+  function renderSite() {
+    var card = el(
+      '<div class="card">' +
+        '<p class="step-label">Start</p>' +
+        '<h2 class="title">Site</h2>' +
+        '<p class="hint">Which site is this machine at?</p>' +
+        '<label class="field" for="site">Site name / number</label>' +
+        '<input type="text" id="site" placeholder="e.g. Site 82" autocomplete="off">' +
+        '<div class="nav"><button class="btn primary" id="next">Start QC</button></div>' +
+      '</div>'
+    );
+    var site = card.querySelector("#site");
+    var next = card.querySelector("#next");
+    site.value = state.site;
+    site.addEventListener("input", function () { state.site = site.value; });
+    next.addEventListener("click", function () {
+      state.site = site.value.trim();
+      if (!state.site) { site.focus(); return; }
+      go(1);
+    });
+    screen.appendChild(card);
+    site.focus();
+  }
+
+  function renderSerial() {
+    var card = el(
+      '<div class="card">' +
+        '<p class="step-label">Serial</p>' +
+        '<h2 class="title">Serial number</h2>' +
+        '<p class="hint">Enter the full serial number, then photograph the device / SN label.</p>' +
+        '<label class="field" for="serial">Serial number</label>' +
+        '<input type="text" id="serial" class="mono" placeholder="e.g. 5930v7" autocomplete="off" autocapitalize="characters">' +
+        '<div style="height:16px"></div>' +
+        '<label class="field">Photo of device / SN label</label>' +
+      '</div>'
+    );
+    var serial = card.querySelector("#serial");
+    serial.value = state.serial;
+
+    var pb = photoBlock("serial", "No photo yet");
+    card.appendChild(pb);
+
+    var nav = el('<div class="nav">' +
+      '<button class="btn ghost" id="back">Back</button>' +
+      '<button class="btn primary" id="next">Next</button>' +
+      '</div>');
+    card.appendChild(nav);
+
+    serial.addEventListener("input", function () { state.serial = serial.value; });
+    nav.querySelector("#back").addEventListener("click", function () { go(0); });
+    nav.querySelector("#next").addEventListener("click", function () {
+      state.serial = serial.value.trim();
+      if (!state.serial) { serial.focus(); return; }
+      go(2);
+    });
+    screen.appendChild(card);
+  }
+
+  function renderConfirm() {
+    var card = el(
+      '<div class="card">' +
+        '<p class="step-label">Confirm</p>' +
+        '<h2 class="title">Confirm last 4</h2>' +
+        '<p class="hint">Re-enter the last 4 characters of the serial number to confirm it.</p>' +
+        '<label class="field" for="last4">Last 4 of serial</label>' +
+        '<input type="text" id="last4" class="mono" maxlength="4" placeholder="••••" autocomplete="off" autocapitalize="characters">' +
+        '<p class="error" id="err"></p>' +
+        '<div class="nav">' +
+          '<button class="btn ghost" id="back">Back</button>' +
+          '<button class="btn primary" id="next" disabled>Next</button>' +
+        '</div>' +
+      '</div>'
+    );
+    var last4 = card.querySelector("#last4");
+    var err = card.querySelector("#err");
+    var next = card.querySelector("#next");
+    var target = lastFour(state.serial);
+
+    function check() {
+      var v = last4.value.trim().toLowerCase();
+      if (v.length < Math.min(4, target.length)) { err.textContent = ""; next.disabled = true; return; }
+      if (v === target) { err.textContent = ""; next.disabled = false; }
+      else { err.textContent = "Doesn't match the serial you entered (" + esc(state.serial) + ")."; next.disabled = true; }
+    }
+    last4.addEventListener("input", check);
+    card.querySelector("#back").addEventListener("click", function () { go(1); });
+    next.addEventListener("click", function () { if (!next.disabled) go(CHECK_START); });
+    screen.appendChild(card);
+    last4.focus();
+  }
+
+  function renderChecklistItem(itemIdx) {
+    var item = CHECKLIST[itemIdx];
+    var stepNo = CHECK_START + itemIdx; // 1-based-ish label handled by progress
+    var card = el(
+      '<div class="card">' +
+        '<p class="step-label">Photo ' + (itemIdx + 1) + ' of ' + CHECKLIST.length + '</p>' +
+        '<h2 class="title">' + esc(item.label) + '</h2>' +
+        '<p class="hint">Take a photo of the ' + esc(item.label) + '.</p>' +
+      '</div>'
+    );
+    var pb = photoBlock(item.id, "No photo yet");
+    card.appendChild(pb);
+
+    var isLast = itemIdx === CHECKLIST.length - 1;
+    var nav = el('<div class="nav">' +
+      '<button class="btn ghost" id="back">Back</button>' +
+      '<button class="btn primary" id="next">' + (isLast ? "Review" : "Next") + '</button>' +
+      '</div>');
+    card.appendChild(nav);
+
+    nav.querySelector("#back").addEventListener("click", function () { go(stepNo - 1); });
+    nav.querySelector("#next").addEventListener("click", function () { go(stepNo + 1); });
+    screen.appendChild(card);
+  }
+
+  function renderReview() {
+    var lines =
+      '<div class="summary-line"><span class="k">Site</span><span class="v">' + esc(state.site || "—") + '</span></div>' +
+      '<div class="summary-line"><span class="k">Serial</span><span class="v mono">' + esc(state.serial || "—") + '</span></div>' +
+      '<div class="summary-line"><span class="k">Date</span><span class="v">' + esc(new Date().toLocaleDateString()) + '</span></div>';
+
+    var tiles = "";
+    var allShots = [{ id: "serial", label: "Device / SN label" }].concat(CHECKLIST);
+    allShots.forEach(function (s) {
+      var has = !!state.photos[s.id];
+      tiles +=
+        '<div class="tile" data-goto="' + s.id + '">' +
+          '<div class="thumb">' + (has ? '<img alt="" src="' + state.photos[s.id] + '">' : 'No photo') + '</div>' +
+          '<div class="cap"><span>' + esc(s.label) + '</span>' +
+            '<span class="badge ' + (has ? "have" : "missing") + '">' + (has ? "✓" : "missing") + '</span>' +
+          '</div>' +
+        '</div>';
+    });
+
+    var missing = allShots.filter(function (s) { return !state.photos[s.id]; }).length;
+
+    var card = el(
+      '<div class="card">' +
+        '<p class="step-label">Review</p>' +
+        '<h2 class="title">Review &amp; report</h2>' +
+        '<p class="hint">Check everything below, then generate the report and use your browser’s ' +
+          '“Save as PDF” from the print dialog.</p>' +
+        lines +
+        '<div class="grid">' + tiles + '</div>' +
+        (missing ? '<p class="error" style="margin-top:14px">' + missing + ' photo(s) still missing — tap a tile to add.</p>' : '') +
+        '<div class="nav" style="margin-top:20px">' +
+          '<button class="btn ghost" id="back">Back</button>' +
+          '<button class="btn ok" id="genReport">📄 Generate report</button>' +
+        '</div>' +
+        '<div style="height:12px"></div>' +
+        '<button class="btn ghost small" id="restart" style="width:100%">Start a new machine</button>' +
+      '</div>'
+    );
+
+    // tap a tile -> jump to that capture step
+    card.querySelectorAll(".tile").forEach(function (tile) {
+      tile.addEventListener("click", function () {
+        var key = tile.getAttribute("data-goto");
+        if (key === "serial") return go(1);
+        var i = CHECKLIST.findIndex(function (c) { return c.id === key; });
+        if (i >= 0) go(CHECK_START + i);
+      });
+    });
+
+    card.querySelector("#back").addEventListener("click", function () { go(REVIEW_INDEX - 1); });
+    card.querySelector("#genReport").addEventListener("click", buildAndPrint);
+    card.querySelector("#restart").addEventListener("click", function () {
+      if (!confirm("Start a new machine? This clears the current photos and details.")) return;
+      state = { site: "", serial: "", photos: {} };
+      go(0);
+    });
+    screen.appendChild(card);
+  }
+
+  function render() {
+    screen.innerHTML = "";
+    if (idx <= 0) return renderSite();
+    if (idx === 1) return renderSerial();
+    if (idx === 2) return renderConfirm();
+    if (idx >= CHECK_START && idx < REVIEW_INDEX) return renderChecklistItem(idx - CHECK_START);
+    return renderReview();
+  }
+
+  /* -------------------------------------------------------------
+   * Report
+   * ----------------------------------------------------------- */
+  function buildReport() {
+    var report = document.getElementById("report");
+    var allShots = [{ id: "serial", label: "Device / SN label" }].concat(CHECKLIST);
+    var photosHtml = allShots.map(function (s) {
+      var inner = state.photos[s.id]
+        ? '<img alt="" src="' + state.photos[s.id] + '">'
+        : '<span class="none">No photo captured</span>';
+      return '<section class="rpt-photo"><h2>' + esc(s.label) + '</h2><div class="frame">' + inner + '</div></section>';
+    }).join("");
+
+    report.innerHTML =
+      '<div class="rpt-header">' +
+        '<h1>Vending Machine QC Report</h1>' +
+        '<div class="rpt-meta">' +
+          '<div><span class="k">Site</span><br><span class="v">' + esc(state.site || "—") + '</span></div>' +
+          '<div><span class="k">Serial number</span><br><span class="v">' + esc(state.serial || "—") + '</span></div>' +
+          '<div><span class="k">Date</span><br><span class="v">' + esc(new Date().toLocaleString()) + '</span></div>' +
+          '<div><span class="k">Photos</span><br><span class="v">' +
+            allShots.filter(function (s) { return state.photos[s.id]; }).length + ' of ' + allShots.length +
+          '</span></div>' +
+        '</div>' +
+      '</div>' + photosHtml;
+  }
+
+  function buildAndPrint() {
+    buildReport();
+    // give the DOM a tick to lay out embedded images before printing
+    setTimeout(function () { window.print(); }, 50);
+  }
+
+  /* -------------------------------------------------------------
+   * Boot
+   * ----------------------------------------------------------- */
+  go(0);
+})();
+</script>
+</body>
+</html>
