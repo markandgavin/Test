@@ -23,7 +23,6 @@
   }
 
   * { box-sizing: border-box; }
-
   html, body { margin: 0; padding: 0; }
 
   body {
@@ -45,41 +44,17 @@
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   }
 
-  header.bar {
-    padding: 16px 18px 12px;
-  }
-  header.bar h1 {
-    font-size: 17px;
-    margin: 0;
-    letter-spacing: .2px;
-  }
+  header.bar { padding: 16px 18px 12px; }
+  header.bar h1 { font-size: 17px; margin: 0; letter-spacing: .2px; }
   .progress {
     margin-top: 10px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    color: var(--muted);
-    font-size: 13px;
+    display: flex; align-items: center; gap: 10px;
+    color: var(--muted); font-size: 13px;
   }
-  .progress .track {
-    flex: 1;
-    height: 6px;
-    border-radius: 999px;
-    background: var(--line);
-    overflow: hidden;
-  }
-  .progress .fill {
-    height: 100%;
-    width: 0%;
-    background: var(--brand);
-    border-radius: 999px;
-    transition: width .25s ease;
-  }
+  .progress .track { flex: 1; height: 6px; border-radius: 999px; background: var(--line); overflow: hidden; }
+  .progress .fill { height: 100%; width: 0%; background: var(--brand); border-radius: 999px; transition: width .25s ease; }
 
-  main {
-    flex: 1;
-    padding: 6px 18px 18px;
-  }
+  main { flex: 1; padding: 6px 18px 18px; }
 
   .card {
     background: var(--card);
@@ -90,94 +65,42 @@
   }
 
   .step-label {
-    font-size: 13px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: .6px;
-    color: var(--brand);
-    margin: 0 0 4px;
+    font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .6px;
+    color: var(--brand); margin: 0 0 4px;
   }
-  h2.title {
-    margin: 0 0 4px;
-    font-size: 22px;
-  }
-  p.hint {
-    margin: 0 0 18px;
-    color: var(--muted);
-    font-size: 14px;
-  }
+  h2.title { margin: 0 0 4px; font-size: 22px; }
+  h2.title.big { font-size: 26px; }
+  p.hint { margin: 0 0 18px; color: var(--muted); font-size: 14px; }
 
-  label.field {
-    display: block;
-    font-size: 14px;
-    font-weight: 600;
-    margin: 0 0 6px;
-  }
+  label.field { display: block; font-size: 14px; font-weight: 600; margin: 0 0 6px; }
   input[type="text"] {
-    width: 100%;
-    font-size: 18px;
-    padding: 14px 14px;
-    border: 1.5px solid var(--line);
-    border-radius: 12px;
-    background: #fff;
-    color: var(--ink);
-    outline: none;
+    width: 100%; font-size: 18px; padding: 14px 14px;
+    border: 1.5px solid var(--line); border-radius: 12px;
+    background: #fff; color: var(--ink); outline: none;
   }
+  input.hero { font-size: 24px; padding: 16px 16px; text-align: center; font-weight: 700; }
   input[type="text"]:focus { border-color: var(--brand); }
   .mono { font-variant-ligatures: none; letter-spacing: .5px; }
 
-  .error {
-    color: var(--danger);
-    font-size: 13px;
-    margin: 8px 0 0;
-    min-height: 16px;
-  }
+  .error { color: var(--danger); font-size: 13px; margin: 8px 0 0; min-height: 16px; }
 
   /* ---- Photo capture ---- */
-  .capture {
-    margin-top: 6px;
-  }
+  .capture { margin-top: 6px; }
   .capture input[type="file"] { display: none; }
-  .shot {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
+  .shot { display: flex; flex-direction: column; gap: 12px; }
   .preview {
-    width: 100%;
-    aspect-ratio: 4 / 3;
-    border-radius: 14px;
-    border: 1.5px dashed var(--line);
-    background: #f8fafc;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--muted);
-    overflow: hidden;
-    text-align: center;
-    padding: 12px;
-    font-size: 14px;
+    width: 100%; aspect-ratio: 4 / 3; border-radius: 14px;
+    border: 1.5px dashed var(--line); background: #f8fafc;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--muted); overflow: hidden; text-align: center; padding: 12px; font-size: 14px;
   }
-  .preview img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-  }
+  .preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .preview.filled { border-style: solid; border-color: var(--ok); }
 
   /* ---- Buttons ---- */
   .btn {
-    -webkit-appearance: none;
-    appearance: none;
-    border: none;
-    border-radius: 12px;
-    font-size: 16px;
-    font-weight: 600;
-    padding: 15px 18px;
-    cursor: pointer;
-    width: 100%;
-    text-align: center;
+    -webkit-appearance: none; appearance: none; border: none; border-radius: 12px;
+    font-size: 16px; font-weight: 600; padding: 15px 18px; cursor: pointer; width: 100%; text-align: center;
   }
   .btn:disabled { opacity: .45; cursor: default; }
   .btn.primary { background: var(--brand); color: var(--brand-ink); }
@@ -185,78 +108,29 @@
   .btn.ok { background: var(--ok); color: #fff; }
   .btn.small { width: auto; padding: 11px 16px; font-size: 14px; }
 
-  .nav {
-    display: flex;
-    gap: 12px;
-    margin-top: 18px;
-  }
+  .nav { display: flex; gap: 12px; margin-top: 18px; }
   .nav .btn { flex: 1; }
 
   /* ---- Review list ---- */
   .summary-line {
-    display: flex;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 10px 0;
-    border-bottom: 1px solid var(--line);
-    font-size: 15px;
+    display: flex; justify-content: space-between; gap: 12px;
+    padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 15px;
   }
   .summary-line .k { color: var(--muted); }
   .summary-line .v { font-weight: 600; text-align: right; }
+  .summary-line.primary .v { font-size: 18px; }
 
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-    margin-top: 16px;
-  }
-  .tile {
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    overflow: hidden;
-    background: #fff;
-  }
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 16px; }
+  .tile { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: #fff; }
   .tile .thumb {
-    aspect-ratio: 4 / 3;
-    background: #f1f5f9;
-    display: flex; align-items: center; justify-content: center;
-    color: var(--muted); font-size: 12px;
+    aspect-ratio: 4 / 3; background: #f1f5f9;
+    display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 12px;
   }
   .tile .thumb img { width: 100%; height: 100%; object-fit: cover; }
-  .tile .cap {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 8px 10px; font-size: 13px; font-weight: 600;
-  }
-  .badge {
-    font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px;
-  }
+  .tile .cap { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; font-size: 13px; font-weight: 600; }
+  .badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
   .badge.have { background: var(--ok-bg); color: var(--ok); }
   .badge.missing { background: var(--danger-bg); color: var(--danger); }
-
-  /* ---- Print report (hidden on screen) ---- */
-  #report { display: none; }
-
-  @media print {
-    @page { margin: 12mm; }
-    body { background: #fff; }
-    .app { display: none !important; }
-    #report { display: block !important; }
-
-    .rpt-header { margin-bottom: 8mm; border-bottom: 2px solid #0f172a; padding-bottom: 5mm; }
-    .rpt-header h1 { margin: 0 0 4mm; font-size: 22px; }
-    .rpt-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 3mm 8mm; font-size: 13px; }
-    .rpt-meta .k { color: #475569; }
-    .rpt-meta .v { font-weight: 700; }
-
-    .rpt-photo { page-break-inside: avoid; break-inside: avoid; page-break-before: always; }
-    .rpt-photo h2 { font-size: 16px; margin: 0 0 3mm; }
-    .rpt-photo .frame {
-      width: 100%; height: 220mm; display: flex; align-items: center; justify-content: center;
-      border: 1px solid #cbd5e1;
-    }
-    .rpt-photo img { max-width: 100%; max-height: 100%; object-fit: contain; }
-    .rpt-photo .none { color: #dc2626; font-weight: 700; }
-  }
 </style>
 </head>
 <body>
@@ -272,9 +146,6 @@
   <main id="screen"><!-- rendered by JS --></main>
 </div>
 
-<!-- Print-only report; built before window.print() -->
-<div id="report"></div>
-
 <script>
 (function () {
   "use strict";
@@ -284,30 +155,31 @@
    * Each item is one photo capture in the wizard.
    * ----------------------------------------------------------- */
   var CHECKLIST = [
-    { id: "peplink",   label: "Peplink" },
+    { id: "peplink",    label: "Peplink" },
     { id: "optconnect", label: "OptConnect" },
-    { id: "nuc",       label: "Nuc" },
-    { id: "badge",     label: "Badge" },
-    { id: "inside",    label: "Inside" },
-    { id: "outside",   label: "Outside" },
-    { id: "keys",      label: "Keys" },
-    { id: "crate",     label: "Crate with label" }
+    { id: "nuc",        label: "Nuc" },
+    { id: "badge",      label: "Badge" },
+    { id: "inside",     label: "Inside" },
+    { id: "outside",    label: "Outside" },
+    { id: "keys",       label: "Keys" },
+    { id: "crate",      label: "Crate with label" }
   ];
 
   var MAX_EDGE = 1600; // downscale longest photo edge to keep things light
 
   /* -------------------------------------------------------------
    * State
+   *   photos[key] = { dataURL, w, h }   (key "serial" = full-SN photo)
    * ----------------------------------------------------------- */
   var state = {
-    site: "",
-    serial: "",
-    photos: {}   // key -> dataURL  (key "serial" for the device photo, plus each checklist id)
+    siteNumber: "",
+    serialLast6: "",
+    photos: {}
   };
 
-  // Screen indices: 0 = site, 1 = serial, 2 = confirm last4,
-  // 3..(3+N-1) = checklist items, last = review
-  var CHECK_START = 3;
+  // Screen indices: 0 = site number, 1 = serial (last6 + photo),
+  // 2..(2+N-1) = checklist items, last = review
+  var CHECK_START = 2;
   var REVIEW_INDEX = CHECK_START + CHECKLIST.length;
   var TOTAL_STEPS = REVIEW_INDEX; // number of input steps before review
   var idx = 0;
@@ -329,13 +201,9 @@
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
     });
   }
-  function lastFour(s) {
-    var v = String(s || "").trim();
-    return v.slice(-4).toLowerCase();
-  }
 
-  // Read a File, downscale via canvas, return a JPEG data URL.
-  function fileToDataURL(file, cb) {
+  // Read a File, downscale via canvas, return { dataURL, w, h } (JPEG).
+  function fileToPhoto(file, cb) {
     var reader = new FileReader();
     reader.onload = function () {
       var img = new Image();
@@ -346,28 +214,23 @@
         var ch = Math.max(1, Math.round(h * scale));
         var canvas = document.createElement("canvas");
         canvas.width = cw; canvas.height = ch;
-        var ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, cw, ch);
+        canvas.getContext("2d").drawImage(img, 0, 0, cw, ch);
         try {
-          cb(canvas.toDataURL("image/jpeg", 0.82));
+          cb({ dataURL: canvas.toDataURL("image/jpeg", 0.82), w: cw, h: ch });
         } catch (e) {
-          cb(reader.result); // fallback to original if canvas is tainted/unavailable
+          cb({ dataURL: reader.result, w: w, h: h }); // fallback
         }
       };
-      img.onerror = function () { cb(reader.result); };
+      img.onerror = function () { cb({ dataURL: reader.result, w: 0, h: 0 }); };
       img.src = reader.result;
     };
     reader.readAsDataURL(file);
   }
 
   function setProgress() {
-    if (idx === 0) {
-      stepCount.textContent = "Start";
-    } else if (idx >= REVIEW_INDEX) {
-      stepCount.textContent = "Review";
-    } else {
-      stepCount.textContent = "Step " + idx + " of " + (TOTAL_STEPS - 1);
-    }
+    if (idx === 0) stepCount.textContent = "Start";
+    else if (idx >= REVIEW_INDEX) stepCount.textContent = "Review";
+    else stepCount.textContent = "Step " + idx + " of " + (TOTAL_STEPS - 1);
     var pct = idx <= 0 ? 0 : Math.min(100, Math.round((idx / REVIEW_INDEX) * 100));
     progressFill.style.width = pct + "%";
   }
@@ -380,7 +243,7 @@
   }
 
   /* -------------------------------------------------------------
-   * Photo capture block (reused for the device photo + each item)
+   * Photo capture block (reused for the serial photo + each item)
    * ----------------------------------------------------------- */
   function photoBlock(key, promptText) {
     var wrap = el(
@@ -399,7 +262,7 @@
     function paint() {
       if (state.photos[key]) {
         prev.classList.add("filled");
-        prev.innerHTML = '<img alt="" src="' + state.photos[key] + '">';
+        prev.innerHTML = '<img alt="" src="' + state.photos[key].dataURL + '">';
         btn.textContent = "🔄 Retake photo";
       }
     }
@@ -411,11 +274,9 @@
       if (!f) return;
       prev.classList.remove("filled");
       prev.textContent = "Processing…";
-      fileToDataURL(f, function (url) {
-        state.photos[key] = url;
+      fileToPhoto(f, function (photo) {
+        state.photos[key] = photo;
         paint();
-        // let dependent controls (e.g. Next button) refresh
-        if (typeof wrap._onchange === "function") wrap._onchange();
       });
     });
     return wrap;
@@ -428,20 +289,20 @@
     var card = el(
       '<div class="card">' +
         '<p class="step-label">Start</p>' +
-        '<h2 class="title">Site</h2>' +
-        '<p class="hint">Which site is this machine at?</p>' +
-        '<label class="field" for="site">Site name / number</label>' +
-        '<input type="text" id="site" placeholder="e.g. Site 82" autocomplete="off">' +
+        '<h2 class="title big">Site number</h2>' +
+        '<p class="hint">Enter the site number for this machine — this is the key identifier.</p>' +
+        '<label class="field" for="site">Site number</label>' +
+        '<input type="text" id="site" class="hero" placeholder="e.g. 82" autocomplete="off">' +
         '<div class="nav"><button class="btn primary" id="next">Start QC</button></div>' +
       '</div>'
     );
     var site = card.querySelector("#site");
     var next = card.querySelector("#next");
-    site.value = state.site;
-    site.addEventListener("input", function () { state.site = site.value; });
+    site.value = state.siteNumber;
+    site.addEventListener("input", function () { state.siteNumber = site.value; });
     next.addEventListener("click", function () {
-      state.site = site.value.trim();
-      if (!state.site) { site.focus(); return; }
+      state.siteNumber = site.value.trim();
+      if (!state.siteNumber) { site.focus(); return; }
       go(1);
     });
     screen.appendChild(card);
@@ -453,18 +314,21 @@
       '<div class="card">' +
         '<p class="step-label">Serial</p>' +
         '<h2 class="title">Serial number</h2>' +
-        '<p class="hint">Enter the full serial number, then photograph the device / SN label.</p>' +
-        '<label class="field" for="serial">Serial number</label>' +
-        '<input type="text" id="serial" class="mono" placeholder="e.g. 5930v7" autocomplete="off" autocapitalize="characters">' +
-        '<div style="height:16px"></div>' +
-        '<label class="field">Photo of device / SN label</label>' +
+        '<p class="hint">Photograph the full serial number, then type the last 6 characters as a quick reference.</p>' +
+        '<label class="field">Photo of full serial number</label>' +
       '</div>'
     );
-    var serial = card.querySelector("#serial");
-    serial.value = state.serial;
-
     var pb = photoBlock("serial", "No photo yet");
     card.appendChild(pb);
+
+    var last6wrap = el(
+      '<div style="margin-top:16px">' +
+        '<label class="field" for="last6">Last 6 of serial</label>' +
+        '<input type="text" id="last6" class="mono" maxlength="6" placeholder="e.g. 5930v7" autocomplete="off" autocapitalize="characters">' +
+        '<p class="error" id="err"></p>' +
+      '</div>'
+    );
+    card.appendChild(last6wrap);
 
     var nav = el('<div class="nav">' +
       '<button class="btn ghost" id="back">Back</button>' +
@@ -472,52 +336,25 @@
       '</div>');
     card.appendChild(nav);
 
-    serial.addEventListener("input", function () { state.serial = serial.value; });
+    var last6 = card.querySelector("#last6");
+    var err = card.querySelector("#err");
+    last6.value = state.serialLast6;
+    last6.addEventListener("input", function () {
+      state.serialLast6 = last6.value;
+      if (last6.value.trim()) err.textContent = "";
+    });
     nav.querySelector("#back").addEventListener("click", function () { go(0); });
     nav.querySelector("#next").addEventListener("click", function () {
-      state.serial = serial.value.trim();
-      if (!state.serial) { serial.focus(); return; }
-      go(2);
+      state.serialLast6 = last6.value.trim();
+      if (!state.serialLast6) { err.textContent = "Enter the last 6 of the serial."; last6.focus(); return; }
+      go(CHECK_START);
     });
     screen.appendChild(card);
   }
 
-  function renderConfirm() {
-    var card = el(
-      '<div class="card">' +
-        '<p class="step-label">Confirm</p>' +
-        '<h2 class="title">Confirm last 4</h2>' +
-        '<p class="hint">Re-enter the last 4 characters of the serial number to confirm it.</p>' +
-        '<label class="field" for="last4">Last 4 of serial</label>' +
-        '<input type="text" id="last4" class="mono" maxlength="4" placeholder="••••" autocomplete="off" autocapitalize="characters">' +
-        '<p class="error" id="err"></p>' +
-        '<div class="nav">' +
-          '<button class="btn ghost" id="back">Back</button>' +
-          '<button class="btn primary" id="next" disabled>Next</button>' +
-        '</div>' +
-      '</div>'
-    );
-    var last4 = card.querySelector("#last4");
-    var err = card.querySelector("#err");
-    var next = card.querySelector("#next");
-    var target = lastFour(state.serial);
-
-    function check() {
-      var v = last4.value.trim().toLowerCase();
-      if (v.length < Math.min(4, target.length)) { err.textContent = ""; next.disabled = true; return; }
-      if (v === target) { err.textContent = ""; next.disabled = false; }
-      else { err.textContent = "Doesn't match the serial you entered (" + esc(state.serial) + ")."; next.disabled = true; }
-    }
-    last4.addEventListener("input", check);
-    card.querySelector("#back").addEventListener("click", function () { go(1); });
-    next.addEventListener("click", function () { if (!next.disabled) go(CHECK_START); });
-    screen.appendChild(card);
-    last4.focus();
-  }
-
   function renderChecklistItem(itemIdx) {
     var item = CHECKLIST[itemIdx];
-    var stepNo = CHECK_START + itemIdx; // 1-based-ish label handled by progress
+    var stepNo = CHECK_START + itemIdx;
     var card = el(
       '<div class="card">' +
         '<p class="step-label">Photo ' + (itemIdx + 1) + ' of ' + CHECKLIST.length + '</p>' +
@@ -525,8 +362,7 @@
         '<p class="hint">Take a photo of the ' + esc(item.label) + '.</p>' +
       '</div>'
     );
-    var pb = photoBlock(item.id, "No photo yet");
-    card.appendChild(pb);
+    card.appendChild(photoBlock(item.id, "No photo yet"));
 
     var isLast = itemIdx === CHECKLIST.length - 1;
     var nav = el('<div class="nav">' +
@@ -534,7 +370,6 @@
       '<button class="btn primary" id="next">' + (isLast ? "Review" : "Next") + '</button>' +
       '</div>');
     card.appendChild(nav);
-
     nav.querySelector("#back").addEventListener("click", function () { go(stepNo - 1); });
     nav.querySelector("#next").addEventListener("click", function () { go(stepNo + 1); });
     screen.appendChild(card);
@@ -542,44 +377,41 @@
 
   function renderReview() {
     var lines =
-      '<div class="summary-line"><span class="k">Site</span><span class="v">' + esc(state.site || "—") + '</span></div>' +
-      '<div class="summary-line"><span class="k">Serial</span><span class="v mono">' + esc(state.serial || "—") + '</span></div>' +
+      '<div class="summary-line primary"><span class="k">Site number</span><span class="v">' + esc(state.siteNumber || "—") + '</span></div>' +
+      '<div class="summary-line"><span class="k">Serial (last 6)</span><span class="v mono">' + esc(state.serialLast6 || "—") + '</span></div>' +
       '<div class="summary-line"><span class="k">Date</span><span class="v">' + esc(new Date().toLocaleDateString()) + '</span></div>';
 
+    var allShots = [{ id: "serial", label: "Full serial number" }].concat(CHECKLIST);
     var tiles = "";
-    var allShots = [{ id: "serial", label: "Device / SN label" }].concat(CHECKLIST);
     allShots.forEach(function (s) {
       var has = !!state.photos[s.id];
       tiles +=
         '<div class="tile" data-goto="' + s.id + '">' +
-          '<div class="thumb">' + (has ? '<img alt="" src="' + state.photos[s.id] + '">' : 'No photo') + '</div>' +
+          '<div class="thumb">' + (has ? '<img alt="" src="' + state.photos[s.id].dataURL + '">' : 'No photo') + '</div>' +
           '<div class="cap"><span>' + esc(s.label) + '</span>' +
             '<span class="badge ' + (has ? "have" : "missing") + '">' + (has ? "✓" : "missing") + '</span>' +
           '</div>' +
         '</div>';
     });
-
     var missing = allShots.filter(function (s) { return !state.photos[s.id]; }).length;
 
     var card = el(
       '<div class="card">' +
         '<p class="step-label">Review</p>' +
-        '<h2 class="title">Review &amp; report</h2>' +
-        '<p class="hint">Check everything below, then generate the report and use your browser’s ' +
-          '“Save as PDF” from the print dialog.</p>' +
+        '<h2 class="title">Review &amp; PDF</h2>' +
+        '<p class="hint">Check everything below, then download the PDF report.</p>' +
         lines +
         '<div class="grid">' + tiles + '</div>' +
         (missing ? '<p class="error" style="margin-top:14px">' + missing + ' photo(s) still missing — tap a tile to add.</p>' : '') +
         '<div class="nav" style="margin-top:20px">' +
           '<button class="btn ghost" id="back">Back</button>' +
-          '<button class="btn ok" id="genReport">📄 Generate report</button>' +
+          '<button class="btn ok" id="download">⬇️ Download PDF</button>' +
         '</div>' +
         '<div style="height:12px"></div>' +
         '<button class="btn ghost small" id="restart" style="width:100%">Start a new machine</button>' +
       '</div>'
     );
 
-    // tap a tile -> jump to that capture step
     card.querySelectorAll(".tile").forEach(function (tile) {
       tile.addEventListener("click", function () {
         var key = tile.getAttribute("data-goto");
@@ -588,12 +420,11 @@
         if (i >= 0) go(CHECK_START + i);
       });
     });
-
     card.querySelector("#back").addEventListener("click", function () { go(REVIEW_INDEX - 1); });
-    card.querySelector("#genReport").addEventListener("click", buildAndPrint);
+    card.querySelector("#download").addEventListener("click", downloadPdf);
     card.querySelector("#restart").addEventListener("click", function () {
       if (!confirm("Start a new machine? This clears the current photos and details.")) return;
-      state = { site: "", serial: "", photos: {} };
+      state = { siteNumber: "", serialLast6: "", photos: {} };
       go(0);
     });
     screen.appendChild(card);
@@ -603,43 +434,190 @@
     screen.innerHTML = "";
     if (idx <= 0) return renderSite();
     if (idx === 1) return renderSerial();
-    if (idx === 2) return renderConfirm();
     if (idx >= CHECK_START && idx < REVIEW_INDEX) return renderChecklistItem(idx - CHECK_START);
     return renderReview();
   }
 
-  /* -------------------------------------------------------------
-   * Report
-   * ----------------------------------------------------------- */
-  function buildReport() {
-    var report = document.getElementById("report");
-    var allShots = [{ id: "serial", label: "Device / SN label" }].concat(CHECKLIST);
-    var photosHtml = allShots.map(function (s) {
-      var inner = state.photos[s.id]
-        ? '<img alt="" src="' + state.photos[s.id] + '">'
-        : '<span class="none">No photo captured</span>';
-      return '<section class="rpt-photo"><h2>' + esc(s.label) + '</h2><div class="frame">' + inner + '</div></section>';
-    }).join("");
+  /* =============================================================
+   * Minimal PDF writer — no external library.
+   * Canvas JPEGs (baseline, DeviceRGB) embed directly via DCTDecode.
+   * Page size: US Letter, 612 x 792 pt.
+   * =========================================================== */
+  var PAGE_W = 612, PAGE_H = 792, MARGIN = 54;
 
-    report.innerHTML =
-      '<div class="rpt-header">' +
-        '<h1>Vending Machine QC Report</h1>' +
-        '<div class="rpt-meta">' +
-          '<div><span class="k">Site</span><br><span class="v">' + esc(state.site || "—") + '</span></div>' +
-          '<div><span class="k">Serial number</span><br><span class="v">' + esc(state.serial || "—") + '</span></div>' +
-          '<div><span class="k">Date</span><br><span class="v">' + esc(new Date().toLocaleString()) + '</span></div>' +
-          '<div><span class="k">Photos</span><br><span class="v">' +
-            allShots.filter(function (s) { return state.photos[s.id]; }).length + ' of ' + allShots.length +
-          '</span></div>' +
-        '</div>' +
-      '</div>' + photosHtml;
+  function strToBytes(str) {
+    var out = new Uint8Array(str.length);
+    for (var i = 0; i < str.length; i++) out[i] = str.charCodeAt(i) & 0xff;
+    return out;
+  }
+  function base64ToBytes(b64) {
+    var bin = atob(b64);
+    var out = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+  function dataUrlToJpegBytes(dataURL) {
+    return base64ToBytes(dataURL.substring(dataURL.indexOf(",") + 1));
+  }
+  // Escape text for a PDF literal string.
+  function pdfText(s) {
+    return String(s == null ? "" : s).replace(/[\\()]/g, function (c) { return "\\" + c; })
+      // keep to printable ASCII; drop anything the base font can't show
+      .replace(/[^\x20-\x7e]/g, "");
   }
 
-  function buildAndPrint() {
-    buildReport();
-    // give the DOM a tick to lay out embedded images before printing
-    setTimeout(function () { window.print(); }, 50);
+  function buildPdf() {
+    // Gather the photos to include, in order.
+    var shots = [{ id: "serial", label: "Full serial number" }].concat(CHECKLIST)
+      .filter(function (s) { return state.photos[s.id]; })
+      .map(function (s) { return { label: s.label, photo: state.photos[s.id] }; });
+
+    var objects = [];               // objects[i] = Uint8Array body for object (i+1)
+    function addObj(bytes) { objects.push(bytes); return objects.length; } // returns obj number
+
+    // Reserve fixed object numbers up front so we can cross-reference.
+    // 1 = Catalog, 2 = Pages, 3 = Font (Helvetica). Pages/images follow.
+    var catalogNo = 1, pagesNo = 2, fontNo = 3;
+    objects.length = 3; // placeholders, filled below
+
+    var kids = [];      // page object numbers
+    var pageEntries = [];
+
+    // Cover page content
+    var now = new Date();
+    var coverLines = [
+      { size: 30, text: "Site " + pdfText(state.siteNumber) },
+      { size: 14, gap: 34, text: "Vending Machine QC Report" },
+      { size: 13, gap: 40, text: "Serial (last 6): " + pdfText(state.serialLast6) },
+      { size: 13, gap: 22, text: "Date: " + pdfText(now.toLocaleString()) },
+      { size: 13, gap: 22, text: "Photos: " + shots.length }
+    ];
+    var cy = PAGE_H - MARGIN - 30;
+    var coverStream = "";
+    coverLines.forEach(function (ln) {
+      cy -= (ln.gap || 0);
+      coverStream += "BT /F1 " + ln.size + " Tf 1 0 0 1 " + MARGIN + " " + cy + " Tm (" + ln.text + ") Tj ET\n";
+    });
+    // horizontal rule under headline
+    coverStream += "0.85 0.85 0.85 RG 1 w " + MARGIN + " " + (PAGE_H - MARGIN - 46) + " m " +
+                   (PAGE_W - MARGIN) + " " + (PAGE_H - MARGIN - 46) + " l S\n";
+
+    var coverContentNo = addObj(streamObj(coverStream));
+    var coverPageNo = addObj(pageObj(coverContentNo, null));
+    kids.push(coverPageNo);
+
+    // One page per photo
+    shots.forEach(function (shot) {
+      var imgNo = addObj(imageObj(shot.photo));
+      var capY = PAGE_H - MARGIN;
+      var stream = "BT /F1 15 Tf 1 0 0 1 " + MARGIN + " " + (capY - 4) + " Tm (" + pdfText(shot.label) + ") Tj ET\n";
+
+      // Fit image within the area below the caption.
+      var availW = PAGE_W - 2 * MARGIN;
+      var availH = (capY - 24) - MARGIN;
+      var iw = shot.photo.w || 1, ih = shot.photo.h || 1;
+      var scale = Math.min(availW / iw, availH / ih);
+      var dw = iw * scale, dh = ih * scale;
+      var dx = MARGIN + (availW - dw) / 2;
+      var dy = MARGIN + (availH - dh) / 2;
+      stream += "q " + dw.toFixed(2) + " 0 0 " + dh.toFixed(2) + " " + dx.toFixed(2) + " " + dy.toFixed(2) + " cm /Im0 Do Q\n";
+
+      var contentNo = addObj(streamObj(stream));
+      var pageNo = addObj(pageObj(contentNo, imgNo));
+      kids.push(pageNo);
+    });
+
+    // Fill reserved objects now that page numbers are known.
+    objects[catalogNo - 1] = strToBytes("<< /Type /Catalog /Pages " + pagesNo + " 0 R >>");
+    objects[pagesNo - 1] = strToBytes(
+      "<< /Type /Pages /Count " + kids.length + " /Kids [" +
+      kids.map(function (n) { return n + " 0 R"; }).join(" ") + "] >>");
+    objects[fontNo - 1] = strToBytes("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
+
+    return assemble(objects, catalogNo);
+
+    // ---- object builders (closures over fontNo / pagesNo) ----
+    function streamObj(content) {
+      var head = strToBytes("<< /Length " + content.length + " >>\nstream\n");
+      var body = strToBytes(content);
+      var tail = strToBytes("\nendstream");
+      return concat([head, body, tail]);
+    }
+    function pageObj(contentNo, imgNo) {
+      var res = "/Font << /F1 " + fontNo + " 0 R >>";
+      if (imgNo) res += " /XObject << /Im0 " + imgNo + " 0 R >>";
+      return strToBytes(
+        "<< /Type /Page /Parent " + pagesNo + " 0 R /MediaBox [0 0 " + PAGE_W + " " + PAGE_H + "] " +
+        "/Resources << " + res + " >> /Contents " + contentNo + " 0 R >>");
+    }
+    function imageObj(photo) {
+      var jpeg = dataUrlToJpegBytes(photo.dataURL);
+      var head = strToBytes(
+        "<< /Type /XObject /Subtype /Image /Width " + (photo.w || 1) + " /Height " + (photo.h || 1) +
+        " /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length " + jpeg.length + " >>\nstream\n");
+      var tail = strToBytes("\nendstream");
+      return concat([head, jpeg, tail]);
+    }
   }
+
+  function concat(arrays) {
+    var total = 0, i;
+    for (i = 0; i < arrays.length; i++) total += arrays[i].length;
+    var out = new Uint8Array(total), off = 0;
+    for (i = 0; i < arrays.length; i++) { out.set(arrays[i], off); off += arrays[i].length; }
+    return out;
+  }
+
+  // Wrap object bodies with "N 0 obj ... endobj", build xref + trailer.
+  function assemble(objects, rootNo) {
+    var chunks = [];
+    var offsets = new Array(objects.length + 1);
+    var pos = 0;
+    function push(bytes) { chunks.push(bytes); pos += bytes.length; }
+
+    push(strToBytes("%PDF-1.4\n%\xe2\xe3\xcf\xd3\n"));
+    for (var i = 0; i < objects.length; i++) {
+      offsets[i + 1] = pos;
+      push(strToBytes((i + 1) + " 0 obj\n"));
+      push(objects[i]);
+      push(strToBytes("\nendobj\n"));
+    }
+    var xrefStart = pos;
+    var n = objects.length + 1;
+    var xref = "xref\n0 " + n + "\n0000000000 65535 f \n";
+    for (var j = 1; j < n; j++) {
+      xref += ("0000000000" + offsets[j]).slice(-10) + " 00000 n \n";
+    }
+    push(strToBytes(xref));
+    push(strToBytes("trailer\n<< /Size " + n + " /Root " + rootNo + " 0 R >>\nstartxref\n" + xrefStart + "\n%%EOF"));
+    return concat(chunks);
+  }
+
+  function sanitizeName(s) {
+    return String(s || "").replace(/[^A-Za-z0-9_-]+/g, "_").replace(/^_+|_+$/g, "") || "machine";
+  }
+
+  function downloadPdf() {
+    var bytes;
+    try {
+      bytes = buildPdf();
+    } catch (e) {
+      alert("Sorry — could not build the PDF: " + e.message);
+      return;
+    }
+    var blob = new Blob([bytes], { type: "application/pdf" });
+    var url = URL.createObjectURL(blob);
+    var name = "QC_Site-" + sanitizeName(state.siteNumber) + "_" + sanitizeName(state.serialLast6) + ".pdf";
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () { document.body.removeChild(a); URL.revokeObjectURL(url); }, 1500);
+  }
+
+  // Expose for automated testing (no effect on normal use).
+  window.__qc = { buildPdf: buildPdf, state: state };
 
   /* -------------------------------------------------------------
    * Boot
