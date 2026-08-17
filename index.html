@@ -445,8 +445,8 @@
       '<div class="capture">' +
         '<div class="shot">' +
           '<div class="preview" id="prev-' + key + '">' + esc(promptText) + '</div>' +
-          '<input type="file" accept="image/*" capture="environment" id="file-' + key + '">' +
-          '<button class="btn ghost" type="button" id="take-' + key + '">📷 Take photo</button>' +
+          '<input type="file" accept="image/*" id="file-' + key + '">' +
+          '<button class="btn ghost" type="button" id="take-' + key + '">📷 Add photo</button>' +
         '</div>' +
       '</div>'
     );
@@ -457,7 +457,7 @@
       if (current.photos[key]) {
         prev.classList.add("filled");
         prev.innerHTML = '<img alt="" src="' + current.photos[key].dataURL + '">';
-        btn.textContent = "🔄 Retake photo";
+        btn.textContent = "🔄 Replace photo";
       }
     }
     paint();
