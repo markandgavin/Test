@@ -93,6 +93,8 @@
   .capture { margin-top: 6px; }
   .capture input[type="file"] { display: none; }
   .shot { display: flex; flex-direction: column; gap: 12px; }
+  .shot-btns { display: flex; gap: 10px; }
+  .shot-btns .btn { flex: 1; }
   .preview {
     width: 100%; aspect-ratio: 4 / 3; border-radius: 14px;
     border: 1.5px dashed var(--line); background: #f8fafc;
@@ -445,30 +447,40 @@
       '<div class="capture">' +
         '<div class="shot">' +
           '<div class="preview" id="prev-' + key + '">' + esc(promptText) + '</div>' +
-          '<input type="file" accept="image/*" id="file-' + key + '">' +
-          '<button class="btn ghost" type="button" id="take-' + key + '">📷 Add photo</button>' +
+          '<input type="file" accept="image/*" capture="environment" id="cam-' + key + '">' +
+          '<input type="file" accept="image/*" id="lib-' + key + '">' +
+          '<div class="shot-btns">' +
+            '<button class="btn ghost" type="button" id="take-' + key + '">📷 Take photo</button>' +
+            '<button class="btn ghost" type="button" id="pick-' + key + '">🖼️ From library</button>' +
+          '</div>' +
         '</div>' +
       '</div>'
     );
-    var input = wrap.querySelector("#file-" + key);
+    var cam = wrap.querySelector("#cam-" + key);
+    var lib = wrap.querySelector("#lib-" + key);
     var prev = wrap.querySelector("#prev-" + key);
-    var btn = wrap.querySelector("#take-" + key);
+    var takeBtn = wrap.querySelector("#take-" + key);
+    var pickBtn = wrap.querySelector("#pick-" + key);
     function paint() {
       if (current.photos[key]) {
         prev.classList.add("filled");
         prev.innerHTML = '<img alt="" src="' + current.photos[key].dataURL + '">';
-        btn.textContent = "🔄 Replace photo";
+        takeBtn.textContent = "🔄 Retake";
       }
     }
     paint();
-    btn.addEventListener("click", function () { input.click(); });
-    input.addEventListener("change", function () {
-      var f = input.files && input.files[0];
+    function handle(inp) {
+      var f = inp.files && inp.files[0];
       if (!f) return;
       prev.classList.remove("filled");
       prev.textContent = "Processing…";
       fileToPhoto(f, function (photo) { current.photos[key] = photo; save(); paint(); });
-    });
+      inp.value = "";
+    }
+    takeBtn.addEventListener("click", function () { cam.click(); });
+    pickBtn.addEventListener("click", function () { lib.click(); });
+    cam.addEventListener("change", function () { handle(cam); });
+    lib.addEventListener("change", function () { handle(lib); });
     return wrap;
   }
 
