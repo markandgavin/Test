@@ -211,6 +211,17 @@
     return renderList();
   }
 
+  function deleteBuild(id,label){
+    var pw=prompt("Enter password to delete "+label+":");
+    if(pw===null) return;
+    if(pw!=="123"){ alert("Wrong password — not deleted."); return; }
+    if(!confirm("Permanently delete "+label+"? This cannot be undone.")) return;
+    rest("builds?id=eq."+id,{method:"DELETE",headers:h()}).then(function(){
+      if(openId===id) openId=null;
+      route();
+    },function(e){ alert("Delete failed — "+(e.message||"")); });
+  }
+
   /* ---------- Reviews list (polling) ---------- */
   function renderList(){
     screen.innerHTML="";screen.appendChild(el('<div class="spinner"></div>'));
@@ -236,8 +247,11 @@
           '<div class="ring" style="--pct:'+pct+'%"><span>'+done+'/'+TOTAL+'</span></div>'+
           '<div class="meta"><div class="site">Site '+esc(b.site_number||"—")+(b.location?' · '+esc(b.location):'')+'</div>'+
           '<div class="sub">'+esc(b.employee||"—")+' · '+esc(buildTime(b))+'</div></div>'+
-          '<span class="pill '+esc(b.status)+'">'+esc((b.status||"").replace("_"," "))+'</span></div>');
-        row.addEventListener("click",function(){ openId=b.id; route(); });
+          '<span class="pill '+esc(b.status)+'">'+esc((b.status||"").replace("_"," "))+'</span>'+
+          '<button class="delbtn" title="Delete" aria-label="Delete" style="background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:6px;flex:none;line-height:1">🗑</button></div>');
+        row.querySelector(".meta").addEventListener("click",function(){ openId=b.id; route(); });
+        row.querySelector(".ring").addEventListener("click",function(){ openId=b.id; route(); });
+        row.querySelector(".delbtn").addEventListener("click",function(e){ e.stopPropagation(); deleteBuild(b.id, "Site "+(b.site_number||"—")); });
         list.appendChild(row);
       });
       wrap.appendChild(list);
