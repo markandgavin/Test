@@ -327,22 +327,27 @@
       card.appendChild(sl);
     }
 
-    // capture
+    // capture — explicit camera + library options
     var cap=el('<div class="capture"><div class="preview" id="prev">'+ (current.photos[item.id]?'':'Your build photo') +'</div>'+
-      '<input type="file" accept="image/*" id="file">'+
+      '<input type="file" accept="image/*" capture="environment" id="fileCam">'+
+      '<input type="file" accept="image/*" id="fileLib">'+
       '<div style="height:12px"></div>'+
-      '<button class="btn ghost" id="take">📷 '+(current.photos[item.id]?"Replace photo":"Add your photo")+'</button>'+
+      '<div style="display:flex;gap:10px">'+
+        '<button class="btn ghost" id="takeCam" style="flex:1">📷 Take photo</button>'+
+        '<button class="btn ghost" id="takeLib" style="flex:1">🖼️ From library</button>'+
+      '</div>'+
       '<div class="upstat" id="up"></div></div>');
-    var prev=cap.querySelector("#prev"),input=cap.querySelector("#file"),up=cap.querySelector("#up");
+    var prev=cap.querySelector("#prev"),up=cap.querySelector("#up");
+    var fileCam=cap.querySelector("#fileCam"),fileLib=cap.querySelector("#fileLib");
     if(current.photos[item.id]){ prev.classList.add("filled"); prev.innerHTML='<img alt="" src="'+current.photos[item.id].dataURL+'">'; }
-    cap.querySelector("#take").addEventListener("click",function(){ input.click(); });
-    input.addEventListener("change",function(){
-      var f=input.files&&input.files[0]; if(!f) return;
+    cap.querySelector("#takeCam").addEventListener("click",function(){ fileCam.click(); });
+    cap.querySelector("#takeLib").addEventListener("click",function(){ fileLib.click(); });
+    function handleFile(f){
+      if(!f) return;
       prev.classList.remove("filled");prev.textContent="Processing…";up.textContent="";up.className="upstat";
       fileToJpeg(f,function(blob,dataURL){
         prev.classList.add("filled");prev.innerHTML='<img alt="" src="'+dataURL+'">';
         current.photos[item.id]={dataURL:dataURL,path:null};
-        cap.querySelector("#take").textContent="🔄 Replace photo";
         if(!blob){ up.textContent="Couldn’t process image";up.className="upstat err";return; }
         up.textContent="Uploading…";
         var path=current.id+"/"+item.id+".jpg";
@@ -353,7 +358,9 @@
           aiCheck(current.id,item.id); // no-op while AI is off
         },function(e){ up.textContent="Upload failed — "+(e.message||"");up.className="upstat err"; });
       });
-    });
+    }
+    fileCam.addEventListener("change",function(){ handleFile(fileCam.files&&fileCam.files[0]); });
+    fileLib.addEventListener("change",function(){ handleFile(fileLib.files&&fileLib.files[0]); });
     card.appendChild(cap);
 
     var isLast=i===TOTAL-1;
