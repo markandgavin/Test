@@ -82,7 +82,9 @@ builds.
   them). In a build's detail view, **Crate labels** lets the reviewer attach label files (PDF or
   image) to that machine; the builder can then download them from their app. A **Site ID** tag
   can be set per machine from the build detail (just above Crate labels); it shows in the machine
-  title in both apps.
+  title in both apps. **Time to complete** is tracked in the backend: a database trigger stamps
+  `submitted_at` when a build is submitted (and `completed_at` when it's passed), so the dashboard
+  shows how long each build took (or elapsed time while still in progress).
 
 **AI check (wired, off by default).** An `ai-check` Supabase Edge Function compares an employee's
 photo to the reference and writes a verdict. It stays dormant until `ANTHROPIC_API_KEY` is set as a

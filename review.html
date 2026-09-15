@@ -137,6 +137,12 @@
   function el(s){var t=document.createElement("template");t.innerHTML=s.trim();return t.content.firstElementChild;}
   function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
   function fmt(ms){try{return new Date(ms).toLocaleString();}catch(e){return"";}}
+  function fmtDur(ms){ if(!(ms>0)) return "0s"; var s=Math.round(ms/1000),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),ss=s%60; if(h) return h+"h "+m+"m"; if(m) return m+"m "+ss+"s"; return ss+"s"; }
+  function buildTime(b){
+    if(b.submitted_at && b.created_at) return "⏱ completed in "+fmtDur(new Date(b.submitted_at)-new Date(b.created_at));
+    if(b.created_at) return "⏱ "+fmtDur(Date.now()-new Date(b.created_at))+" elapsed";
+    return "";
+  }
   function openZoom(src){var z=el('<div class="zoom"><button class="x">×</button><img></div>');z.querySelector("img").src=src;z.addEventListener("click",function(){z.remove();});z.querySelector("img").addEventListener("click",function(e){e.stopPropagation();});document.body.appendChild(z);}
   function stopPoll(){ if(poll){clearInterval(poll);poll=null;} }
 
@@ -184,7 +190,7 @@
     screen.innerHTML="";screen.appendChild(el('<div class="spinner"></div>'));
     var first=true;
     function load(){
-      sel("builds?select=id,site_number,location,employee,status,updated_at,build_steps(step_id)&order=updated_at.desc").then(function(rows){
+      sel("builds?select=id,site_number,location,employee,status,created_at,submitted_at,updated_at,build_steps(step_id)&order=updated_at.desc").then(function(rows){
         liveEl.textContent="live · "+new Date().toLocaleTimeString();
         paintList(rows);
       },function(err){ if(first) paintList(null,err); });
@@ -203,7 +209,7 @@
         var row=el('<div class="brow">'+
           '<div class="ring" style="--pct:'+pct+'%"><span>'+done+'/'+TOTAL+'</span></div>'+
           '<div class="meta"><div class="site">Site '+esc(b.site_number||"—")+(b.location?' · '+esc(b.location):'')+'</div>'+
-          '<div class="sub">'+esc(b.employee||"—")+' · '+fmt(b.updated_at)+'</div></div>'+
+          '<div class="sub">'+esc(b.employee||"—")+' · '+esc(buildTime(b))+'</div></div>'+
           '<span class="pill '+esc(b.status)+'">'+esc((b.status||"").replace("_"," "))+'</span></div>');
         row.addEventListener("click",function(){ openId=b.id; route(); });
         list.appendChild(row);
@@ -234,7 +240,7 @@
     var passed=CHECKLIST.filter(function(c){return byId[c.id]&&byId[c.id].review_status==="pass";}).length;
     var container=el('<div></div>');
     container.appendChild(el('<div class="card"><h2 class="title" id="bTitle">Site '+esc(b.site_number||"—")+(b.location?' · '+esc(b.location):'')+'</h2>'+
-      '<p class="hint">'+esc(b.employee||"—")+(b.serial_last6?' · SN …'+esc(b.serial_last6):'')+' · '+esc((b.status||"").replace("_"," "))+' · '+passed+'/'+TOTAL+' passed · updated '+fmt(b.updated_at)+'</p>'+
+      '<p class="hint">'+esc(b.employee||"—")+(b.serial_last6?' · SN …'+esc(b.serial_last6):'')+' · '+esc((b.status||"").replace("_"," "))+' · '+passed+'/'+TOTAL+' passed · '+esc(buildTime(b))+' · updated '+fmt(b.updated_at)+'</p>'+
       '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn ok small" id="passAll">Mark build passed</button>'+
       '<button class="btn warn small" id="failBuild">Mark needs fix</button>'+
       '<button class="btn ghost small" id="runAi">🤖 Run AI check</button></div>'+
