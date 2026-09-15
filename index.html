@@ -230,48 +230,83 @@
   var TOTAL_SHOTS = 1 + CHECKLIST.length; // serial photo + checklist items
 
   /* =============================================================
-   * Storage — IndexedDB (photos are too big for localStorage).
-   * Each record: { id, siteNumber, serialLast6,
-   *                photos: { key -> {dataURL,w,h} }, createdAt, updatedAt }
+   * Storage — shared Supabase backend. These QCs are the "final
+   * checklist": stored as builds(kind='final') + build_steps, with
+   * photos in the 'photos' bucket under final/<id>/<key>.jpg. They
+   * show up in review.html under the "Final checklist" filter.
+   * Record shape (kept the same as before, plus photo.path):
+   *   { id, siteNumber, serialLast6, status,
+   *     photos: { key -> {dataURL,w,h,path} }, createdAt, updatedAt }
    * =========================================================== */
-  var DB_NAME = "vmqc", STORE = "machines", _dbPromise = null;
+  var SUPABASE_URL = "https://wpniecetoljhdrrljcta.supabase.co";
+  var SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbmllY2V0b2xqaGRycmxqY3RhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0MzA0ODgsImV4cCI6MjEwNTAwNjQ4OH0.m9jJlwy_EysIPAJMLdEcETFtaz2WdJop0Q1lhUElFnU";
 
-  function idbOpen() {
-    if (_dbPromise) return _dbPromise;
-    _dbPromise = new Promise(function (resolve, reject) {
-      var req = indexedDB.open(DB_NAME, 1);
-      req.onupgradeneeded = function () {
-        var db = req.result;
-        if (!db.objectStoreNames.contains(STORE)) db.createObjectStore(STORE, { keyPath: "id" });
-      };
-      req.onsuccess = function () { resolve(req.result); };
-      req.onerror = function () { reject(req.error); };
+  function sbH(extra) { return Object.assign({ apikey: SUPABASE_ANON, Authorization: "Bearer " + SUPABASE_ANON }, extra || {}); }
+  function sbRest(path, opts) {
+    return fetch(SUPABASE_URL + "/rest/v1/" + path, opts).then(function (r) {
+      if (!r.ok) return r.text().then(function (t) { throw new Error("DB " + r.status + " " + t.slice(0, 140)); });
+      return r.status === 204 ? null : r.json();
     });
-    return _dbPromise;
   }
-  function idbTx(mode, fn) {
-    return idbOpen().then(function (db) {
-      return new Promise(function (resolve, reject) {
-        var tx = db.transaction(STORE, mode);
-        var store = tx.objectStore(STORE);
-        var out = fn(store);
-        tx.oncomplete = function () { resolve(out && out.result !== undefined ? out.result : out); };
-        tx.onerror = function () { reject(tx.error); };
-        tx.onabort = function () { reject(tx.error); };
-      });
-    });
+  function publicUrl(key) { return SUPABASE_URL + "/storage/v1/object/public/photos/" + key; }
+  function storageUpload(path, blob) {
+    return fetch(SUPABASE_URL + "/storage/v1/object/photos/" + path, {
+      method: "POST", headers: sbH({ "Content-Type": blob.type || "image/jpeg", "x-upsert": "true" }), body: blob
+    }).then(function (r) { if (!r.ok) return r.text().then(function (t) { throw new Error("Upload " + r.status + " " + t.slice(0, 120)); }); return true; });
+  }
+
+  var STEP_LABELS = { serial: "Full serial number" };
+  CHECKLIST.forEach(function (c) { STEP_LABELS[c.id] = c.label; });
+
+  function recFromRow(b, steps) {
+    var photos = {};
+    (steps || []).forEach(function (s) { if (s.photo_path) photos[s.step_id] = { path: s.photo_path, dataURL: publicUrl(s.photo_path), w: 0, h: 0 }; });
+    return {
+      id: b.id, siteNumber: b.site_number || "", serialLast6: b.serial_last6 || "", status: b.status,
+      photos: photos, createdAt: b.created_at ? Date.parse(b.created_at) : Date.now(),
+      updatedAt: b.updated_at ? Date.parse(b.updated_at) : Date.now()
+    };
   }
   function allMachines() {
-    return idbTx("readonly", function (s) { return s.getAll(); })
-      .then(function (rows) {
-        rows = rows || [];
-        rows.sort(function (a, b) { return (b.updatedAt || 0) - (a.updatedAt || 0); });
-        return rows;
-      });
+    return sbRest("builds?kind=eq.final&select=id,site_number,serial_last6,status,created_at,updated_at,build_steps(step_id,photo_path)&order=updated_at.desc")
+      .then(function (rows) { return (rows || []).map(function (b) { return recFromRow(b, b.build_steps); }); });
   }
-  function getMachine(id) { return idbTx("readonly", function (s) { return s.get(id); }); }
-  function putMachine(rec) { rec.updatedAt = Date.now(); return idbTx("readwrite", function (s) { s.put(rec); }).then(function () { return rec; }); }
-  function deleteMachine(id) { return idbTx("readwrite", function (s) { s.delete(id); }); }
+  function getMachine(id) {
+    return Promise.all([
+      sbRest("builds?id=eq." + id + "&select=id,site_number,serial_last6,status,created_at,updated_at"),
+      sbRest("build_steps?build_id=eq." + id + "&select=step_id,photo_path")
+    ]).then(function (res) { var b = res[0] && res[0][0]; return b ? recFromRow(b, res[1]) : null; });
+  }
+  function createMachine() {
+    return sbRest("builds", { method: "POST", headers: sbH({ "Content-Type": "application/json", Prefer: "return=representation" }),
+      body: JSON.stringify({ kind: "final", status: "in_progress" }) }).then(function (rows) { return recFromRow(rows[0], []); });
+  }
+  function putMachine(rec) {
+    if (!rec.id) return Promise.resolve(rec);
+    return sbRest("builds?id=eq." + rec.id, { method: "PATCH", headers: sbH({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ site_number: rec.siteNumber || null, serial_last6: rec.serialLast6 || null, updated_at: new Date().toISOString() }) })
+      .then(function () { rec.updatedAt = Date.now(); return rec; });
+  }
+  function deleteMachine(id) { return sbRest("builds?id=eq." + id, { method: "DELETE", headers: sbH() }); }
+  function submitMachine(id) {
+    return sbRest("builds?id=eq." + id, { method: "PATCH", headers: sbH({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ status: "submitted", updated_at: new Date().toISOString() }) });
+  }
+  // Upload one captured photo and record its build_step.
+  function uploadPhoto(rec, key, blob) {
+    var path = "final/" + rec.id + "/" + key + ".jpg";
+    return storageUpload(path, blob).then(function () {
+      return sbRest("build_steps?on_conflict=build_id,step_id", { method: "POST",
+        headers: sbH({ "Content-Type": "application/json", Prefer: "resolution=merge-duplicates,return=representation" }),
+        body: JSON.stringify({ build_id: rec.id, step_id: key, label: STEP_LABELS[key] || key, photo_path: path, updated_at: new Date().toISOString() }) });
+    }).then(function () { return path; });
+  }
+  function dataURLToBlob(dataURL) {
+    var parts = dataURL.split(","), mime = (parts[0].match(/:(.*?);/) || [])[1] || "image/jpeg";
+    var bin = atob(parts[1]), n = bin.length, u8 = new Uint8Array(n);
+    for (var i = 0; i < n; i++) u8[i] = bin.charCodeAt(i);
+    return new Blob([u8], { type: mime });
+  }
 
   /* -------------------------------------------------------------
    * App state
@@ -417,17 +452,22 @@
       var fab = el('<div class="fab-row"><button class="btn primary" id="newBtn">＋ New machine</button></div>');
       fab.querySelector("#newBtn").addEventListener("click", newMachine);
       wrap.appendChild(fab);
+    }, function (err) {
+      wrap.innerHTML = "";
+      var eb = el('<div class="empty">Couldn’t reach the server (' + esc(err.message || "network") + ').<br><button class="btn ghost small" id="retry" style="margin-top:12px">Retry</button></div>');
+      eb.querySelector("#retry").addEventListener("click", renderHome);
+      wrap.appendChild(eb);
+      var fab = el('<div class="fab-row"><button class="btn primary" id="newBtn">＋ New machine</button></div>');
+      fab.querySelector("#newBtn").addEventListener("click", newMachine);
+      wrap.appendChild(fab);
     });
     screen.appendChild(wrap);
   }
 
   function newMachine() {
-    var rec = {
-      id: String(Date.now()) + "-" + Math.random().toString(36).slice(2, 7),
-      siteNumber: "", serialLast6: "", photos: {},
-      createdAt: Date.now(), updatedAt: Date.now()
-    };
-    putMachine(rec).then(function () { openMachine(rec, 0); });
+    screen.innerHTML = ""; screen.appendChild(el('<div class="empty">Creating…</div>'));
+    createMachine().then(function (rec) { openMachine(rec, 0); },
+      function (e) { alert("Couldn’t start a new QC — " + (e.message || "check your connection")); goHome(); });
   }
 
   /* =============================================================
@@ -474,7 +514,14 @@
       if (!f) return;
       prev.classList.remove("filled");
       prev.textContent = "Processing…";
-      fileToPhoto(f, function (photo) { current.photos[key] = photo; save(); paint(); });
+      fileToPhoto(f, function (photo) {
+        current.photos[key] = photo; paint();
+        if (current.id) {
+          uploadPhoto(current, key, dataURLToBlob(photo.dataURL)).then(function (path) {
+            current.photos[key].path = path;
+          }, function (e) { alert("Photo didn’t upload — " + (e.message || "check your connection") + ". Try again."); });
+        }
+      });
       inp.value = "";
     }
     takeBtn.addEventListener("click", function () { cam.click(); });
@@ -595,6 +642,8 @@
           '<button class="btn ghost" id="back">Back</button>' +
           '<button class="btn ok" id="save">⬇️ Save PDF</button>' +
         '</div>' +
+        '<button class="btn primary" id="submit" style="margin-top:12px">Submit to review</button>' +
+        '<p class="hint" style="margin-top:8px;text-align:center">' + (current.status === "submitted" ? "Already submitted — resubmitting updates it." : "Sends this QC to the review dashboard (Final checklist).") + '</p>' +
       '</div>'
     );
     card.querySelectorAll(".tile").forEach(function (tile) {
@@ -607,6 +656,13 @@
     });
     card.querySelector("#back").addEventListener("click", function () { go(REVIEW_INDEX - 1); });
     card.querySelector("#save").addEventListener("click", savePdf);
+    card.querySelector("#submit").addEventListener("click", function () {
+      if (missing && !confirm(missing + " photo(s) still missing. Submit anyway?")) return;
+      var btn = card.querySelector("#submit"); btn.disabled = true; btn.textContent = "Submitting…";
+      submitMachine(current.id).then(function () {
+        current.status = "submitted"; alert("Submitted to review ✓"); goHome();
+      }, function (e) { btn.disabled = false; btn.textContent = "Submit to review"; alert("Submit failed — " + (e.message || "check your connection")); });
+    });
     if (isEmbedded()) {
       card.querySelector(".nav").insertAdjacentElement("afterend",
         el('<p class="hint" style="margin-top:12px;text-align:center">Hosted preview — to save the PDF, open the standalone file version.</p>'));
@@ -732,7 +788,39 @@
   }
 
   // iOS-friendly save: Web Share (Save to Files) → Print → anchor download.
+  // Photos loaded from the server carry a remote URL, not base64. Fetch each
+  // one as a blob and turn it into a data URL (+ dimensions) so buildPdf can
+  // embed it. Freshly captured photos already have base64 and are skipped.
+  function ensurePdfBytes(cb) {
+    var shots = orderedShots();
+    var pending = shots.filter(function (x) { return !/^data:/.test(x.photo.dataURL); });
+    if (!pending.length) return cb(null);
+    var i = 0, firstErr = null;
+    (function next() {
+      if (i >= pending.length) return cb(firstErr);
+      var ph = pending[i++].photo;
+      fetch(ph.dataURL).then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.blob(); }).then(function (blob) {
+        return new Promise(function (res) {
+          var fr = new FileReader();
+          fr.onload = function () {
+            var im = new Image();
+            im.onload = function () { ph.dataURL = fr.result; ph.w = im.naturalWidth; ph.h = im.naturalHeight; res(); };
+            im.onerror = function () { res(); };
+            im.src = fr.result;
+          };
+          fr.onerror = function () { res(); };
+          fr.readAsDataURL(blob);
+        });
+      }).then(next, function (e) { if (!firstErr) firstErr = e; next(); });
+    })();
+  }
   function savePdf() {
+    ensurePdfBytes(function (err) {
+      if (err) { printFallback(); return; }   // couldn't fetch bytes → print report (uses <img> URLs)
+      savePdfNow();
+    });
+  }
+  function savePdfNow() {
     var bytes, blob, file;
     try {
       bytes = buildPdf();

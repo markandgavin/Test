@@ -1,8 +1,9 @@
 # Vending Machine QC Form
 
-A single self-contained web page for running QC on vending machines in the field. No server,
-no login, no internet required — everything runs locally in your phone's browser. It keeps a
-list of machines on your device and generates a PDF report per machine.
+A single self-contained web page for running the **final QC** on vending machines in the field.
+It walks you through a photo checklist per machine and generates a PDF report. QCs are saved to
+the shared backend (the same Supabase project as the build system) and show up in the review
+dashboard under the **Final checklist** filter, so a connection is required.
 
 ## How to use
 
@@ -38,9 +39,10 @@ component. Saved as `QC_Site-<site>_<last6>.pdf`.
 
 ## Where your data lives
 
-Machines and photos are stored **on your device** using the browser's IndexedDB, tied to how you
-opened the page. Open it the same way each time (ideally the Home-Screen app) to keep your list.
-Nothing is uploaded anywhere.
+Machines and photos are stored in the **shared Supabase backend** as `builds` with `kind='final'`
+(plus `build_steps`, photos in the `photos` bucket under `final/<id>/…`). Everyone who opens the
+page sees the same list, and each machine appears in the review dashboard's **Final checklist**
+filter. There's a **Submit to review** button on the review screen to flag a QC as submitted.
 
 ## Editing the checklist
 
@@ -84,7 +86,10 @@ builds.
   can be set per machine from the build detail (just above Crate labels); it shows in the machine
   title in both apps. **Time to complete** is tracked in the backend: a database trigger stamps
   `submitted_at` when a build is submitted (and `completed_at` when it's passed), so the dashboard
-  shows how long each build took (or elapsed time while still in progress).
+  shows how long each build took (or elapsed time while still in progress). A **Builder / Final
+  checklist** filter at the top of the reviews list switches between the builder's checklist (from
+  `build.html`) and the final QC (from `index.html`). Projects can be **deleted with the password
+  `123`** via the trash button on each row.
 
 **AI check (wired, off by default).** An `ai-check` Supabase Edge Function compares an employee's
 photo to the reference and writes a verdict. It stays dormant until `ANTHROPIC_API_KEY` is set as a

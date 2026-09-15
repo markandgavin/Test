@@ -135,6 +135,15 @@
     {id:"badge_scanner",label:"Badge reader & barcode scanner (front view)"},
     {id:"outside",label:"Outside of machine"}
   ];
+  // Final QC checklist (the original QC checklist, submitted from index.html as kind='final').
+  var FINAL_CHECKLIST=[
+    {id:"serial",label:"Full serial number"},
+    {id:"peplink",label:"Peplink"},{id:"optconnect",label:"OptConnect"},{id:"nuc",label:"Nuc"},
+    {id:"badge",label:"Badge"},{id:"inside",label:"Inside"},{id:"outside",label:"Outside"},
+    {id:"keys",label:"Keys"},{id:"crate",label:"Crate with label"}
+  ];
+  function listFor(kind){ return kind==="final"?FINAL_CHECKLIST:CHECKLIST; }
+  var listKind="builder";
   var TOTAL=CHECKLIST.length, MAX_EDGE=1800;
 
   function h(x){return Object.assign({apikey:SUPABASE_ANON,Authorization:"Bearer "+SUPABASE_ANON},x||{});}
@@ -228,7 +237,7 @@
     screen.innerHTML="";screen.appendChild(el('<div class="spinner"></div>'));
     var first=true;
     function load(){
-      sel("builds?select=id,site_number,location,employee,status,created_at,submitted_at,updated_at,build_steps(step_id)&order=updated_at.desc").then(function(rows){
+      sel("builds?select=id,kind,site_number,location,employee,status,created_at,submitted_at,updated_at,build_steps(step_id)&kind=eq."+listKind+"&order=updated_at.desc").then(function(rows){
         liveEl.textContent="live · "+new Date().toLocaleTimeString();
         paintList(rows);
       },function(err){ if(first) paintList(null,err); });
@@ -239,13 +248,18 @@
   function paintList(rows,err){
     if(openId) return; // navigated away
     screen.innerHTML="";var wrap=el("<div></div>");
+    var filt=el('<div class="kfilter" style="display:flex;gap:8px;margin:2px 0 14px">'+
+      '<button class="btn '+(listKind==="builder"?"primary":"ghost")+' small" data-k="builder" style="flex:1">Builder checklist</button>'+
+      '<button class="btn '+(listKind==="final"?"primary":"ghost")+' small" data-k="final" style="flex:1">Final checklist</button></div>');
+    filt.querySelectorAll("[data-k]").forEach(function(bt){ bt.addEventListener("click",function(){ if(listKind!==bt.getAttribute("data-k")){ listKind=bt.getAttribute("data-k"); renderList(); } }); });
+    wrap.appendChild(filt);
     if(err){var b=el('<div class="banner err">Couldn’t reach the server ('+esc(err.message||"network")+'). <span class="as-link" id="r">Retry</span></div>');b.querySelector("#r").addEventListener("click",route);wrap.appendChild(b);}
     if(rows&&rows.length){
       var list=el('<div class="blist"></div>');
       rows.forEach(function(b){
-        var done=(b.build_steps||[]).length,pct=Math.round(done/TOTAL*100);
+        var lt=listFor(b.kind).length, done=(b.build_steps||[]).length,pct=Math.round(done/lt*100);
         var row=el('<div class="brow">'+
-          '<div class="ring" style="--pct:'+pct+'%"><span>'+done+'/'+TOTAL+'</span></div>'+
+          '<div class="ring" style="--pct:'+pct+'%"><span>'+done+'/'+lt+'</span></div>'+
           '<div class="meta"><div class="site">Site '+esc(b.site_number||"—")+(b.location?' · '+esc(b.location):'')+'</div>'+
           '<div class="sub">'+esc(b.employee||"—")+' · '+esc(buildTime(b))+'</div></div>'+
           '<span class="pill '+esc(b.status)+'">'+esc((b.status||"").replace("_"," "))+'</span>'+
@@ -256,7 +270,7 @@
         list.appendChild(row);
       });
       wrap.appendChild(list);
-    } else if(rows){ wrap.appendChild(el('<div class="empty">No builds submitted yet.</div>')); }
+    } else if(rows){ wrap.appendChild(el('<div class="empty">No '+(listKind==="final"?"final QC":"builder")+' checklists yet.</div>')); }
     screen.appendChild(wrap);
   }
 
@@ -278,10 +292,11 @@
     if(!b){ screen.innerHTML="";screen.appendChild(el('<div class="empty">Build not found.</div>'));return; }
     labels=labels||[];
     var byId={}; steps.forEach(function(s){byId[s.step_id]=s;});
-    var passed=CHECKLIST.filter(function(c){return byId[c.id]&&byId[c.id].review_status==="pass";}).length;
+    var LIST=listFor(b.kind), LTOTAL=LIST.length;
+    var passed=LIST.filter(function(c){return byId[c.id]&&byId[c.id].review_status==="pass";}).length;
     var container=el('<div></div>');
     container.appendChild(el('<div class="card"><h2 class="title" id="bTitle">Site '+esc(b.site_number||"—")+(b.location?' · '+esc(b.location):'')+'</h2>'+
-      '<p class="hint">'+esc(b.employee||"—")+(b.serial_last6?' · SN …'+esc(b.serial_last6):'')+' · '+esc((b.status||"").replace("_"," "))+' · '+passed+'/'+TOTAL+' passed · '+esc(buildTime(b))+' · updated '+fmt(b.updated_at)+'</p>'+
+      '<p class="hint">'+(b.kind==="final"?"Final QC · ":"")+esc(b.employee||"—")+(b.serial_last6?' · SN …'+esc(b.serial_last6):'')+' · '+esc((b.status||"").replace("_"," "))+' · '+passed+'/'+LTOTAL+' passed · '+esc(buildTime(b))+' · updated '+fmt(b.updated_at)+'</p>'+
       '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn ok small" id="passAll">Mark build passed</button>'+
       '<button class="btn warn small" id="failBuild">Mark needs fix</button>'+
       '<button class="btn ghost small" id="runAi">🤖 Run AI check</button></div>'+
@@ -290,7 +305,7 @@
     container.appendChild(siteIdCard(b, container.querySelector("#bTitle")));
     container.appendChild(labelsCard(b,labels));
 
-    CHECKLIST.forEach(function(c){
+    LIST.forEach(function(c){
       var s=byId[c.id];
       var empUrl=s&&s.photo_path?pub("photos",s.photo_path):"";
       var refUrl=guide[c.id]?pub("guide",guide[c.id]):"";
@@ -334,7 +349,7 @@
     container.querySelector("#failBuild").addEventListener("click",function(){ setBuildStatus(b.id,"needs_fix"); });
     container.querySelector("#runAi").addEventListener("click",function(){
       if(!getKey()){ setModal.hidden=false; return; }
-      var todo=CHECKLIST.filter(function(c){ var s=byId[c.id]; return s && s.photo_path; });
+      var todo=LIST.filter(function(c){ var s=byId[c.id]; return s && s.photo_path; });
       var stat=container.querySelector("#aiStat");
       if(!todo.length){ stat.textContent="No photos to check yet."; return; }
       var i=0, errs=0;
