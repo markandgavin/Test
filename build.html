@@ -140,8 +140,9 @@
   function sbInsert(table, row, prefer){
     return rest(table, { method:"POST", headers:h({ "Content-Type":"application/json", Prefer:(prefer||"return=representation") }), body:JSON.stringify(row) });
   }
-  function sbUpsert(table, row){
-    return rest(table, { method:"POST", headers:h({ "Content-Type":"application/json", Prefer:"resolution=merge-duplicates,return=representation" }), body:JSON.stringify(row) });
+  function sbUpsert(table, row, onConflict){
+    var q = onConflict ? ("?on_conflict="+onConflict) : "";
+    return rest(table+q, { method:"POST", headers:h({ "Content-Type":"application/json", Prefer:"resolution=merge-duplicates,return=representation" }), body:JSON.stringify(row) });
   }
   function sbPatch(table, query, patch){
     return rest(table+"?"+query, { method:"PATCH", headers:h({ "Content-Type":"application/json", Prefer:"return=representation" }), body:JSON.stringify(patch) });
@@ -346,7 +347,7 @@
         up.textContent="Uploading…";
         var path=current.id+"/"+item.id+".jpg";
         storageUpload("photos",path,blob).then(function(){
-          return sbUpsert("build_steps",{build_id:current.id,step_id:item.id,label:item.label,photo_path:path,review_status:"pending"});
+          return sbUpsert("build_steps",{build_id:current.id,step_id:item.id,label:item.label,photo_path:path},"build_id,step_id");
         }).then(function(){
           current.photos[item.id].path=path; up.textContent="Uploaded ✓";up.className="upstat ok";
           aiCheck(current.id,item.id); // no-op while AI is off
