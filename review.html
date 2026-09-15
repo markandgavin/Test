@@ -75,6 +75,13 @@
   .zoom img{max-width:100%;max-height:100%;object-fit:contain}
   .zoom .x{position:absolute;top:calc(12px + env(safe-area-inset-top));right:16px;color:#fff;font-size:30px;background:none;border:none;cursor:pointer}
   .savenote{font-size:12px;color:var(--muted);min-height:15px}
+  .icon-btn{-webkit-appearance:none;appearance:none;background:none;border:none;font-size:20px;cursor:pointer;padding:4px 6px;line-height:1;color:var(--muted)}
+  .modal-bg{position:fixed;inset:0;background:rgba(2,6,23,.5);display:flex;align-items:center;justify-content:center;z-index:60;padding:16px}
+  .modal-bg[hidden]{display:none}
+  .modal{background:#fff;border:1px solid var(--line);border-radius:16px;max-width:460px;width:100%;padding:20px;box-shadow:var(--shadow)}
+  .modal input{width:100%;font-size:16px;padding:12px;border:1.5px solid var(--line);border-radius:10px;outline:none}
+  .modal input:focus{border-color:var(--brand)}
+  .aihdr{display:flex;gap:8px;margin-top:8px}
 </style>
 </head>
 <body>
@@ -84,8 +91,19 @@
       <button class="link-btn" id="backBtn" style="display:none">‹ Builds</button>
       <h1>Build Review</h1>
       <span class="live" id="live"></span>
+      <button class="icon-btn" id="setBtn" title="AI settings">⚙</button>
     </div>
   </header>
+  <div class="modal-bg" id="setModal" hidden><div class="modal">
+    <h2 class="title">AI settings</h2>
+    <p class="hint">Your OpenRouter key is stored only in <b>this</b> browser and sent straight to the AI check — never saved in the repo or on employees' devices.</p>
+    <label class="field">OpenRouter API key</label>
+    <input type="password" id="orKey" placeholder="sk-or-v1-…" autocomplete="off">
+    <div style="height:10px"></div>
+    <label class="field">Model (optional)</label>
+    <input type="text" id="orModel" placeholder="z-ai/glm-5.3-flash" autocomplete="off">
+    <div class="aihdr" style="margin-top:14px"><button class="btn ghost" id="setClear" style="flex:1">Clear</button><button class="btn ghost" id="setClose" style="flex:1">Close</button><button class="btn primary" id="setSave" style="flex:1">Save</button></div>
+  </div></div>
   <div class="tabs" id="tabs">
     <div class="tab on" data-tab="reviews">Reviews</div>
     <div class="tab" data-tab="guide">Reference guide</div>
@@ -128,6 +146,29 @@
     route();
   });
   backBtn.addEventListener("click",function(){ openId=null; route(); });
+
+  // ---- AI key settings (stored only in this browser) ----
+  function getKey(){ try{return localStorage.getItem("or_key")||"";}catch(e){return "";} }
+  function getModel(){ try{return localStorage.getItem("or_model")||"";}catch(e){return "";} }
+  var setModal=document.getElementById("setModal");
+  document.getElementById("setBtn").addEventListener("click",function(){
+    document.getElementById("orKey").value=getKey(); document.getElementById("orModel").value=getModel(); setModal.hidden=false;
+  });
+  document.getElementById("setClose").addEventListener("click",function(){ setModal.hidden=true; });
+  document.getElementById("setClear").addEventListener("click",function(){ try{localStorage.removeItem("or_key");localStorage.removeItem("or_model");}catch(e){} document.getElementById("orKey").value="";document.getElementById("orModel").value=""; });
+  document.getElementById("setSave").addEventListener("click",function(){
+    try{ var k=document.getElementById("orKey").value.trim(),m=document.getElementById("orModel").value.trim();
+      if(k)localStorage.setItem("or_key",k);else localStorage.removeItem("or_key");
+      if(m)localStorage.setItem("or_model",m);else localStorage.removeItem("or_model"); }catch(e){}
+    setModal.hidden=true;
+  });
+  setModal.addEventListener("click",function(e){ if(e.target===setModal) setModal.hidden=true; });
+
+  function aiCheckOne(bid,sid){
+    var payload={build_id:bid,step_id:sid,api_key:getKey()}; var mdl=getModel(); if(mdl)payload.model=mdl;
+    return fetch(SUPABASE_URL+"/functions/v1/ai-check",{method:"POST",headers:h({"Content-Type":"application/json"}),body:JSON.stringify(payload)})
+      .then(function(r){ return r.json().then(function(j){ return {ok:r.ok,j:j}; }, function(){ return {ok:r.ok,j:{}}; }); });
+  }
 
   function route(){
     stopPoll(); backBtn.style.display=(openId?"":"none"); liveEl.textContent="";
@@ -192,8 +233,10 @@
     var container=el('<div></div>');
     container.appendChild(el('<div class="card"><h2 class="title">Site '+esc(b.site_number||"—")+'</h2>'+
       '<p class="hint">'+esc(b.employee||"—")+(b.serial_last6?' · SN …'+esc(b.serial_last6):'')+' · '+esc((b.status||"").replace("_"," "))+' · '+passed+'/'+TOTAL+' passed · updated '+fmt(b.updated_at)+'</p>'+
-      '<div style="display:flex;gap:8px"><button class="btn ok small" id="passAll">Mark build passed</button>'+
-      '<button class="btn warn small" id="failBuild">Mark needs fix</button></div></div>'));
+      '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn ok small" id="passAll">Mark build passed</button>'+
+      '<button class="btn warn small" id="failBuild">Mark needs fix</button>'+
+      '<button class="btn ghost small" id="runAi">🤖 Run AI check</button></div>'+
+      '<div class="savenote" id="aiStat"></div></div>'));
 
     CHECKLIST.forEach(function(c){
       var s=byId[c.id];
@@ -232,6 +275,21 @@
 
     container.querySelector("#passAll").addEventListener("click",function(){ setBuildStatus(b.id,"passed"); });
     container.querySelector("#failBuild").addEventListener("click",function(){ setBuildStatus(b.id,"needs_fix"); });
+    container.querySelector("#runAi").addEventListener("click",function(){
+      if(!getKey()){ setModal.hidden=false; return; }
+      var todo=CHECKLIST.filter(function(c){ var s=byId[c.id]; return s && s.photo_path; });
+      var stat=container.querySelector("#aiStat");
+      if(!todo.length){ stat.textContent="No photos to check yet."; return; }
+      var i=0, errs=0;
+      (function next(){
+        if(i>=todo.length){ stat.textContent="AI done"+(errs?(" — "+errs+" error(s); check ⚙ key/model"):"")+". Results refresh below."; return; }
+        var c=todo[i++]; stat.textContent="AI checking "+c.label+" ("+i+"/"+todo.length+")…";
+        aiCheckOne(b.id,c.id).then(function(res){
+          if(!res.ok || (res.j&&res.j.error)){ errs++; if(errs===1){ stat.textContent="AI error on "+c.label+": "+((res.j&&(res.j.error||res.j.detail))||"request failed"); } }
+          next();
+        });
+      })();
+    });
     screen.innerHTML="";screen.appendChild(container);
   }
   function setBuildStatus(id,status){

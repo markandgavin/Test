@@ -112,7 +112,7 @@
   var SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbmllY2V0b2xqaGRycmxqY3RhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0MzA0ODgsImV4cCI6MjEwNTAwNjQ4OH0.m9jJlwy_EysIPAJMLdEcETFtaz2WdJop0Q1lhUElFnU";
   // AI photo-vs-reference check is fully wired but OFF for now.
   // Flip to true AFTER deploying the ai-check function and setting the API key.
-  var AI_ENABLED = true;
+  var AI_ENABLED = false; // AI runs from the admin dashboard (review.html), which holds the key
 
   // Steps. Trays (and any step) show a reference image if the admin has uploaded one.
   var CHECKLIST = [
