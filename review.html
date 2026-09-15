@@ -71,9 +71,19 @@
   .gcard .gfoot{padding:8px 10px;display:flex;align-items:center;justify-content:space-between;gap:8px}
   .gcard .gfoot .n{font-weight:600;font-size:13px}
   .gcard input[type=file]{display:none}
-  .zoom{position:fixed;inset:0;background:rgba(2,6,23,.94);display:flex;align-items:center;justify-content:center;z-index:50;padding:12px}
+  .zoom{position:fixed;inset:0;background:rgba(2,6,23,.94);display:flex;align-items:center;justify-content:center;z-index:70;padding:12px}
   .zoom img{max-width:100%;max-height:100%;object-fit:contain}
   .zoom .x{position:absolute;top:calc(12px + env(safe-area-inset-top));right:16px;color:#fff;font-size:30px;background:none;border:none;cursor:pointer}
+  .cmpv{position:fixed;inset:0;background:rgba(2,6,23,.96);z-index:60;display:flex;flex-direction:column;padding:calc(10px + env(safe-area-inset-top)) 10px calc(10px + env(safe-area-inset-bottom))}
+  .cmpv .bar{display:flex;align-items:center;justify-content:space-between;color:#fff;margin-bottom:8px;gap:12px}
+  .cmpv .bar h3{margin:0;font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cmpv .x{color:#fff;font-size:28px;background:none;border:none;cursor:pointer;line-height:1;flex:none}
+  .cmpv .panes{flex:1;display:flex;gap:8px;min-height:0}
+  .cmpv .pane{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0;margin:0}
+  .cmpv .pane figcaption{color:#cbd5e1;font-size:12px;text-align:center;margin-bottom:4px}
+  .cmpv .pane .box{flex:1;display:flex;align-items:center;justify-content:center;min-height:0;overflow:hidden;background:#0b1220;border-radius:8px}
+  .cmpv .pane img{max-width:100%;max-height:100%;object-fit:contain;cursor:zoom-in}
+  .cmpv .pane .none{color:#94a3b8;font-size:13px}
   .savenote{font-size:12px;color:var(--muted);min-height:15px}
   .icon-btn{-webkit-appearance:none;appearance:none;background:none;border:none;font-size:20px;cursor:pointer;padding:4px 6px;line-height:1;color:var(--muted)}
   .modal-bg{position:fixed;inset:0;background:rgba(2,6,23,.5);display:flex;align-items:center;justify-content:center;z-index:60;padding:16px}
@@ -144,6 +154,20 @@
     return "";
   }
   function openZoom(src){var z=el('<div class="zoom"><button class="x">×</button><img></div>');z.querySelector("img").src=src;z.addEventListener("click",function(){z.remove();});z.querySelector("img").addEventListener("click",function(e){e.stopPropagation();});document.body.appendChild(z);}
+  function openCompare(empUrl,refUrl,label){
+    var v=el('<div class="cmpv"><div class="bar"><h3>'+esc(label)+' — compare</h3><button class="x" aria-label="Close">×</button></div>'+
+      '<div class="panes">'+
+        '<figure class="pane"><figcaption>Their build</figcaption><div class="box">'+(empUrl?'<img src="'+empUrl+'">':'<span class="none">No photo yet</span>')+'</div></figure>'+
+        '<figure class="pane"><figcaption>Reference</figcaption><div class="box">'+(refUrl?'<img src="'+refUrl+'">':'<span class="none">No reference</span>')+'</div></figure>'+
+      '</div></div>');
+    function close(){ v.remove(); document.removeEventListener("keydown",onKey); }
+    function onKey(e){ if(e.key==="Escape") close(); }
+    v.querySelector(".x").addEventListener("click",close);
+    v.addEventListener("click",function(e){ if(e.target===v||e.target.classList.contains("panes")) close(); });
+    v.querySelectorAll(".pane img").forEach(function(im){ im.addEventListener("click",function(e){ e.stopPropagation(); openZoom(im.getAttribute("src")); }); });
+    document.addEventListener("keydown",onKey);
+    document.body.appendChild(v);
+  }
   function stopPoll(){ if(poll){clearInterval(poll);poll=null;} }
 
   document.getElementById("tabs").addEventListener("click",function(e){
@@ -251,8 +275,10 @@
 
     CHECKLIST.forEach(function(c){
       var s=byId[c.id];
-      var empImg=s&&s.photo_path?'<img src="'+pub("photos",s.photo_path)+'" data-z="'+pub("photos",s.photo_path)+'">':'<div class="none">No photo yet</div>';
-      var refImg=guide[c.id]?'<img src="'+pub("guide",guide[c.id])+'" data-z="'+pub("guide",guide[c.id])+'">':'<div class="none">No reference</div>';
+      var empUrl=s&&s.photo_path?pub("photos",s.photo_path):"";
+      var refUrl=guide[c.id]?pub("guide",guide[c.id]):"";
+      var empImg=empUrl?'<img src="'+empUrl+'" data-z="'+empUrl+'">':'<div class="none">No photo yet</div>';
+      var refImg=refUrl?'<img src="'+refUrl+'" data-z="'+refUrl+'">':'<div class="none">No reference</div>';
       var rs=(s&&s.review_status)||"pending";
       var ai=s&&s.ai_verdict;
       var aiHtml=ai
@@ -260,7 +286,9 @@
         : '<div class="ai off">AI check: not run (AI is currently off)</div>';
       var step=el('<div class="step" data-step="'+c.id+'">'+
         '<div class="head"><span class="lbl">'+esc(c.label)+'</span>'+
-        '<span class="pill '+(rs==="pass"?"passed":rs==="needs_fix"?"needs_fix":"submitted")+'">'+esc(rs.replace("_"," "))+'</span></div>'+
+        '<span style="display:inline-flex;align-items:center;gap:8px">'+
+        (empUrl?'<button class="btn ghost small cmpbtn" type="button" title="Compare side by side">⛶ Compare</button>':'')+
+        '<span class="pill '+(rs==="pass"?"passed":rs==="needs_fix"?"needs_fix":"submitted")+'">'+esc(rs.replace("_"," "))+'</span></span></div>'+
         '<div class="imgs"><figure><figcaption>Their build</figcaption>'+empImg+'</figure>'+
         '<figure><figcaption>Reference</figcaption>'+refImg+'</figure></div>'+
         aiHtml+
@@ -270,6 +298,7 @@
           '<textarea placeholder="Note to the builder (optional)">'+esc((s&&s.review_note)||"")+'</textarea>'+
           '<div class="savenote"></div></div></div>');
       step.querySelectorAll("img[data-z]").forEach(function(im){im.addEventListener("click",function(){openZoom(im.getAttribute("data-z"));});});
+      var cmpb=step.querySelector(".cmpbtn"); if(cmpb) cmpb.addEventListener("click",function(){ openCompare(empUrl,refUrl,c.label); });
       var note=step.querySelector("textarea"), sn=step.querySelector(".savenote");
       function saveReview(status){
         sn.textContent="Saving…";
