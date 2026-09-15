@@ -80,8 +80,9 @@ builds.
   step's photo against the reference, and mark **Pass / Needs-fix** with notes. A **Reference
   guide** tab lets the admin upload the reference image for each step once (all employees then see
   them). In a build's detail view, **Crate labels** lets the reviewer attach label files (PDF or
-  image) to that machine; the builder can then download them from their app. A **📍 location**
-  tag can be added per machine from the build detail; it shows in the machine title in both apps.
+  image) to that machine; the builder can then download them from their app. A **Site ID** tag
+  can be set per machine from the build detail (just above Crate labels); it shows in the machine
+  title in both apps.
 
 **AI check (wired, off by default).** An `ai-check` Supabase Edge Function compares an employee's
 photo to the reference and writes a verdict. It stays dormant until `ANTHROPIC_API_KEY` is set as a
