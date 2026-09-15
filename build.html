@@ -222,10 +222,14 @@
   }
 
   /* ============ HOME ============ */
+  function getMyName(){ try{return localStorage.getItem("builder_name")||"";}catch(e){return "";} }
+  function setMyName(v){ try{ if(v) localStorage.setItem("builder_name",v); }catch(e){} }
+  var showMine=true;   // when a name is known, default to showing only that builder's machines
+
   function renderHome(){
     screen.innerHTML="";screen.appendChild(el('<div class="spinner"></div>'));
-    // builds + their step photo counts in one query
-    sbSelect("builds?select=id,site_number,location,employee,status,updated_at,build_steps(step_id)&order=updated_at.desc").then(function(rows){
+    // builder checklist builds only (final QCs live in the review dashboard)
+    sbSelect("builds?kind=eq.builder&select=id,site_number,location,employee,status,updated_at,build_steps(step_id)&order=updated_at.desc").then(function(rows){
       renderHomeList(rows,null);
     },function(err){ renderHomeList(null,err); });
   }
@@ -235,6 +239,17 @@
     if(err){
       var eb=el('<div class="banner err">Couldn’t reach the server ('+esc(err.message||"network")+'). <span class="as-link" id="retry">Retry</span></div>');
       eb.querySelector("#retry").addEventListener("click",renderHome);wrap.appendChild(eb);
+    }
+    var myName=getMyName();
+    if(rows && myName && showMine){
+      rows=rows.filter(function(b){ return (b.employee||"").trim().toLowerCase()===myName.trim().toLowerCase(); });
+    }
+    if(myName){
+      var bar=el('<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin:2px 2px 12px">'+
+        '<span style="font-size:13px;color:var(--muted)">'+(showMine?"Showing your machines · "+esc(myName):"Showing everyone’s machines")+'</span>'+
+        '<button class="as-link" id="tgl" style="background:none;border:none;color:var(--brand);font-weight:600;font-size:13px;cursor:pointer">'+(showMine?"Show all":"Only mine")+'</button></div>');
+      bar.querySelector("#tgl").addEventListener("click",function(){ showMine=!showMine; renderHome(); });
+      wrap.appendChild(bar);
     }
     var n=rows?rows.length:0;
     wrap.appendChild(el('<div class="home-head"><h2>Builds</h2><span class="count">'+n+(n===1?" build":" builds")+'</span></div>'));
@@ -291,12 +306,13 @@
       '<p class="error" id="err"></p>'+
       '<div class="nav"><button class="btn ghost" id="back">Cancel</button><button class="btn primary" id="next">Start</button></div></div>');
     var emp=card.querySelector("#emp"),site=card.querySelector("#site"),err=card.querySelector("#err");
-    emp.value=current.employee;site.value=current.siteNumber;
+    emp.value=current.employee||getMyName();site.value=current.siteNumber;
     card.querySelector("#back").addEventListener("click",goHome);
     card.querySelector("#next").addEventListener("click",function(){
       current.employee=emp.value.trim();current.siteNumber=site.value.trim();
       if(!current.employee){err.textContent="Enter your name.";emp.focus();return;}
       if(!current.siteNumber){err.textContent="Enter the site number.";site.focus();return;}
+      setMyName(current.employee);
       setStatus("Starting…");
       sbInsert("builds",{employee:current.employee,site_number:current.siteNumber,status:"in_progress"}).then(function(rows){
         current.id=rows[0].id;setStatus("");go(0);
