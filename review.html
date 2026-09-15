@@ -184,7 +184,7 @@
     screen.innerHTML="";screen.appendChild(el('<div class="spinner"></div>'));
     var first=true;
     function load(){
-      sel("builds?select=id,site_number,employee,status,updated_at,build_steps(step_id)&order=updated_at.desc").then(function(rows){
+      sel("builds?select=id,site_number,location,employee,status,updated_at,build_steps(step_id)&order=updated_at.desc").then(function(rows){
         liveEl.textContent="live · "+new Date().toLocaleTimeString();
         paintList(rows);
       },function(err){ if(first) paintList(null,err); });
@@ -202,7 +202,7 @@
         var done=(b.build_steps||[]).length,pct=Math.round(done/TOTAL*100);
         var row=el('<div class="brow">'+
           '<div class="ring" style="--pct:'+pct+'%"><span>'+done+'/'+TOTAL+'</span></div>'+
-          '<div class="meta"><div class="site">Site '+esc(b.site_number||"—")+'</div>'+
+          '<div class="meta"><div class="site">Site '+esc(b.site_number||"—")+(b.location?' · '+esc(b.location):'')+'</div>'+
           '<div class="sub">'+esc(b.employee||"—")+' · '+fmt(b.updated_at)+'</div></div>'+
           '<span class="pill '+esc(b.status)+'">'+esc((b.status||"").replace("_"," "))+'</span></div>');
         row.addEventListener("click",function(){ openId=b.id; route(); });
@@ -233,12 +233,26 @@
     var byId={}; steps.forEach(function(s){byId[s.step_id]=s;});
     var passed=CHECKLIST.filter(function(c){return byId[c.id]&&byId[c.id].review_status==="pass";}).length;
     var container=el('<div></div>');
-    container.appendChild(el('<div class="card"><h2 class="title">Site '+esc(b.site_number||"—")+'</h2>'+
+    container.appendChild(el('<div class="card"><h2 class="title" id="bTitle">Site '+esc(b.site_number||"—")+(b.location?' · '+esc(b.location):'')+'</h2>'+
       '<p class="hint">'+esc(b.employee||"—")+(b.serial_last6?' · SN …'+esc(b.serial_last6):'')+' · '+esc((b.status||"").replace("_"," "))+' · '+passed+'/'+TOTAL+' passed · updated '+fmt(b.updated_at)+'</p>'+
       '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn ok small" id="passAll">Mark build passed</button>'+
       '<button class="btn warn small" id="failBuild">Mark needs fix</button>'+
+      '<button class="btn ghost small" id="locBtn">📍 '+(b.location?"Edit location":"Add location")+'</button>'+
       '<button class="btn ghost small" id="runAi">🤖 Run AI check</button></div>'+
       '<div class="savenote" id="aiStat"></div></div>'));
+
+    container.querySelector("#locBtn").addEventListener("click",function(){
+      var v=prompt("Location tag for this machine:", b.location||"");
+      if(v===null) return;
+      v=v.trim();
+      var stat=container.querySelector("#aiStat"); stat.textContent="Saving location…";
+      patch("builds","id=eq."+b.id,{location:v||null,updated_at:new Date().toISOString()}).then(function(){
+        b.location=v;
+        container.querySelector("#bTitle").textContent="Site "+(b.site_number||"—")+(v?" · "+v:"");
+        container.querySelector("#locBtn").textContent="📍 "+(v?"Edit location":"Add location");
+        stat.textContent="Location saved ✓";
+      },function(e){ stat.textContent="Location save failed — "+(e.message||""); });
+    });
 
     container.appendChild(labelsCard(b,labels));
 

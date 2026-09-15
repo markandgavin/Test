@@ -223,7 +223,7 @@
   function renderHome(){
     screen.innerHTML="";screen.appendChild(el('<div class="spinner"></div>'));
     // builds + their step photo counts in one query
-    sbSelect("builds?select=id,site_number,employee,status,updated_at,build_steps(step_id)&order=updated_at.desc").then(function(rows){
+    sbSelect("builds?select=id,site_number,location,employee,status,updated_at,build_steps(step_id)&order=updated_at.desc").then(function(rows){
       renderHomeList(rows,null);
     },function(err){ renderHomeList(null,err); });
   }
@@ -242,7 +242,7 @@
         var done=(b.build_steps||[]).length, pct=Math.round(done/TOTAL*100);
         var row=el('<div class="brow"><div class="open">'+
           '<div class="ring" style="--pct:'+pct+'%"><span>'+done+'/'+TOTAL+'</span></div>'+
-          '<div class="meta"><div class="site">Site '+esc(b.site_number||"—")+'</div>'+
+          '<div class="meta"><div class="site">Site '+esc(b.site_number||"—")+(b.location?' · '+esc(b.location):'')+'</div>'+
           '<div class="sub">'+esc(b.employee||"—")+' · '+fmtDate(b.updated_at)+'</div></div></div>'+
           '<span class="pill '+esc(b.status)+'">'+esc((b.status||"").replace("_"," "))+'</span></div>');
         row.querySelector(".open").addEventListener("click",function(){ openById(b.id); });
@@ -266,7 +266,7 @@
       setStatus("");
       var b=res[0]&&res[0][0]; if(!b){alert("Build not found");return goHome();}
       var photos={}; (res[1]||[]).forEach(function(s){ photos[s.step_id]={path:s.photo_path,dataURL:publicUrl("photos",s.photo_path)}; });
-      openBuild({id:b.id,employee:b.employee,siteNumber:b.site_number,serialLast6:b.serial_last6||"",status:b.status,photos:photos}, TOTAL);
+      openBuild({id:b.id,employee:b.employee,siteNumber:b.site_number,serialLast6:b.serial_last6||"",location:b.location||"",status:b.status,photos:photos}, TOTAL);
     },function(e){ setStatus("Couldn’t open — "+(e.message||""),"err"); });
   }
   function startNew(){ openBuild({id:null,employee:"",siteNumber:"",serialLast6:"",status:"in_progress",photos:{}}, -1); }
@@ -382,7 +382,7 @@
     });
     var missing=CHECKLIST.filter(function(s){return !current.photos[s.id];}).length;
     var card=el('<div class="card"><p class="step-label">Review</p><h2 class="title">Review &amp; submit</h2>'+
-      '<p class="hint">'+esc(current.employee)+' · Site '+esc(current.siteNumber)+(current.serialLast6?' · SN …'+esc(current.serialLast6):'')+'</p>'+
+      '<p class="hint">'+esc(current.employee)+' · Site '+esc(current.siteNumber)+(current.location?' · '+esc(current.location):'')+(current.serialLast6?' · SN …'+esc(current.serialLast6):'')+'</p>'+
       '<div class="grid">'+tiles+'</div>'+
       '<div id="empLabels" hidden style="margin-top:18px"></div>'+
       (missing?'<p class="error" style="margin-top:14px">'+missing+' photo(s) still missing — tap a tile to add.</p>':'')+
