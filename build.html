@@ -116,8 +116,7 @@
 
   // Steps. Trays (and any step) show a reference image if the admin has uploaded one.
   var CHECKLIST = [
-    { id:"serial",     label:"Serial number (photo)" },
-    { id:"plaque",     label:"Serial plaque (photo)" },
+    { id:"serial",     label:"Serial number plaque" },
     { id:"tray1",      label:"Tray 1" },
     { id:"tray2",      label:"Tray 2" },
     { id:"tray3",      label:"Tray 3" },
@@ -265,10 +264,15 @@
       setStatus("");
       var b=res[0]&&res[0][0]; if(!b){alert("Build not found");return goHome();}
       var photos={}; (res[1]||[]).forEach(function(s){ photos[s.step_id]={path:s.photo_path,dataURL:publicUrl("photos",s.photo_path)}; });
-      openBuild({id:b.id,employee:b.employee,siteNumber:b.site_number,status:b.status,photos:photos}, TOTAL);
+      openBuild({id:b.id,employee:b.employee,siteNumber:b.site_number,serialLast6:b.serial_last6||"",status:b.status,photos:photos}, TOTAL);
     },function(e){ setStatus("Couldn’t open — "+(e.message||""),"err"); });
   }
-  function startNew(){ openBuild({id:null,employee:"",siteNumber:"",status:"in_progress",photos:{}}, -1); }
+  function startNew(){ openBuild({id:null,employee:"",siteNumber:"",serialLast6:"",status:"in_progress",photos:{}}, -1); }
+  function saveSerial(){
+    if(!current.id) return;
+    sbPatch("builds","id=eq."+current.id,{serial_last6:current.serialLast6||null,updated_at:new Date().toISOString()})
+      .then(function(){ setStatus("Saved ✓","ok"); }, function(){ setStatus("Serial not saved — check connection","err"); });
+  }
 
   /* ============ NEW BUILD (name + site) ============ */
   function renderNew(){
@@ -312,6 +316,16 @@
       card.appendChild(el('<div class="ref"><div class="noref">Reference for '+esc(item.label)+' not uploaded yet.</div></div>'));
     }
 
+    // serial: also type the last 6 (e.g. …v7), like the original QC
+    if(item.id==="serial"){
+      var sl=el('<div style="margin:2px 0 14px"><label class="field" for="last6">Last 6 of serial</label>'+
+        '<input type="text" id="last6" class="mono" maxlength="6" placeholder="e.g. 5930v7" autocomplete="off" autocapitalize="characters"></div>');
+      var last6=sl.querySelector("#last6"); last6.value=current.serialLast6||"";
+      last6.addEventListener("input",function(){ current.serialLast6=last6.value; });
+      last6.addEventListener("blur",function(){ current.serialLast6=last6.value.trim(); saveSerial(); });
+      card.appendChild(sl);
+    }
+
     // capture
     var cap=el('<div class="capture"><div class="preview" id="prev">'+ (current.photos[item.id]?'':'Your build photo') +'</div>'+
       '<input type="file" accept="image/*" id="file">'+
@@ -343,8 +357,8 @@
 
     var isLast=i===TOTAL-1;
     var nav=el('<div class="nav"><button class="btn ghost" id="back">Back</button><button class="btn primary" id="next">'+(isLast?"Review":"Next")+'</button></div>');
-    nav.querySelector("#back").addEventListener("click",function(){ go(i-1); });
-    nav.querySelector("#next").addEventListener("click",function(){ go(i+1); });
+    nav.querySelector("#back").addEventListener("click",function(){ if(item.id==="serial")saveSerial(); go(i-1); });
+    nav.querySelector("#next").addEventListener("click",function(){ if(item.id==="serial")saveSerial(); go(i+1); });
     card.appendChild(nav);
     screen.appendChild(card);
   }
@@ -359,7 +373,7 @@
     });
     var missing=CHECKLIST.filter(function(s){return !current.photos[s.id];}).length;
     var card=el('<div class="card"><p class="step-label">Review</p><h2 class="title">Review &amp; submit</h2>'+
-      '<p class="hint">'+esc(current.employee)+' · Site '+esc(current.siteNumber)+'</p>'+
+      '<p class="hint">'+esc(current.employee)+' · Site '+esc(current.siteNumber)+(current.serialLast6?' · SN …'+esc(current.serialLast6):'')+'</p>'+
       '<div class="grid">'+tiles+'</div>'+
       (missing?'<p class="error" style="margin-top:14px">'+missing+' photo(s) still missing — tap a tile to add.</p>':'')+
       '<div class="nav" style="margin-top:20px"><button class="btn ghost" id="back">Back</button><button class="btn ok" id="submit">Submit for review</button></div></div>');

@@ -98,7 +98,7 @@
   var SUPABASE_URL="https://wpniecetoljhdrrljcta.supabase.co";
   var SUPABASE_ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbmllY2V0b2xqaGRycmxqY3RhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0MzA0ODgsImV4cCI6MjEwNTAwNjQ4OH0.m9jJlwy_EysIPAJMLdEcETFtaz2WdJop0Q1lhUElFnU";
   var CHECKLIST=[
-    {id:"serial",label:"Serial number"},{id:"plaque",label:"Serial plaque"},
+    {id:"serial",label:"Serial number plaque"},
     {id:"tray1",label:"Tray 1"},{id:"tray2",label:"Tray 2"},{id:"tray3",label:"Tray 3"},
     {id:"tray4",label:"Tray 4"},{id:"tray5",label:"Tray 5"},
     {id:"connectors",label:"Side connectors"},{id:"outside",label:"Outside of machine"}
@@ -191,7 +191,7 @@
     var passed=CHECKLIST.filter(function(c){return byId[c.id]&&byId[c.id].review_status==="pass";}).length;
     var container=el('<div></div>');
     container.appendChild(el('<div class="card"><h2 class="title">Site '+esc(b.site_number||"—")+'</h2>'+
-      '<p class="hint">'+esc(b.employee||"—")+' · '+esc((b.status||"").replace("_"," "))+' · '+passed+'/'+TOTAL+' passed · updated '+fmt(b.updated_at)+'</p>'+
+      '<p class="hint">'+esc(b.employee||"—")+(b.serial_last6?' · SN …'+esc(b.serial_last6):'')+' · '+esc((b.status||"").replace("_"," "))+' · '+passed+'/'+TOTAL+' passed · updated '+fmt(b.updated_at)+'</p>'+
       '<div style="display:flex;gap:8px"><button class="btn ok small" id="passAll">Mark build passed</button>'+
       '<button class="btn warn small" id="failBuild">Mark needs fix</button></div></div>'));
 
