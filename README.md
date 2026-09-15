@@ -71,13 +71,16 @@ A separate, cloud-backed system for guided machine assembly and live review. Unl
 `index.html` above, these share data through a dedicated Supabase project so everyone sees the same
 builds.
 
-- **`build.html`** — the employee app. Enter name + site, then for each step (serial, plaque,
-  Tray 1–5, side connectors, outside) view the reference photo and upload a photo of your build.
-  Everything uploads to Supabase.
+- **`build.html`** — the employee app. Enter name + site, then for each step (serial plaque,
+  Tray 1–5, **Rail positions**, side connectors, outside) view the reference photo and upload a
+  photo of your build. Each photo step offers **📷 Take photo** (camera) or **🖼️ From library**.
+  On the review screen, any **crate labels** the reviewer attached to this machine appear as
+  download links. Everything uploads to Supabase.
 - **`review.html`** — the admin dashboard. Watch builds come in live, open one to compare each
   step's photo against the reference, and mark **Pass / Needs-fix** with notes. A **Reference
   guide** tab lets the admin upload the reference image for each step once (all employees then see
-  them).
+  them). In a build's detail view, **Crate labels** lets the reviewer attach label files (PDF or
+  image) to that machine; the builder can then download them from their app.
 
 **AI check (wired, off by default).** An `ai-check` Supabase Edge Function compares an employee's
 photo to the reference and writes a verdict. It stays dormant until `ANTHROPIC_API_KEY` is set as a

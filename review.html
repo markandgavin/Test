@@ -119,6 +119,7 @@
     {id:"serial",label:"Serial number plaque"},
     {id:"tray1",label:"Tray 1"},{id:"tray2",label:"Tray 2"},{id:"tray3",label:"Tray 3"},
     {id:"tray4",label:"Tray 4"},{id:"tray5",label:"Tray 5"},
+    {id:"railpos",label:"Rail positions"},
     {id:"connectors",label:"Side connectors"},{id:"outside",label:"Outside of machine"}
   ];
   var TOTAL=CHECKLIST.length, MAX_EDGE=1800;
@@ -217,17 +218,18 @@
     screen.innerHTML="";screen.appendChild(el('<div class="spinner"></div>'));
     var first=true;
     function load(){
-      Promise.all([ sel("builds?id=eq."+id+"&select=*"), sel("build_steps?build_id=eq."+id+"&select=*") ]).then(function(res){
+      Promise.all([ sel("builds?id=eq."+id+"&select=*"), sel("build_steps?build_id=eq."+id+"&select=*"), sel("crate_labels?build_id=eq."+id+"&select=*&order=created_at.asc") ]).then(function(res){
         liveEl.textContent="live · "+new Date().toLocaleTimeString();
-        paintBuild(res[0]&&res[0][0], res[1]||[]);
+        paintBuild(res[0]&&res[0][0], res[1]||[], res[2]||[]);
       },function(err){ if(first){screen.innerHTML="";screen.appendChild(el('<div class="banner err">'+esc(err.message||"error")+'</div>'));} });
       first=false;
     }
     load(); poll=setInterval(load,5000);
   }
-  function paintBuild(b,steps){
+  function paintBuild(b,steps,labels){
     if(!openId) return;
     if(!b){ screen.innerHTML="";screen.appendChild(el('<div class="empty">Build not found.</div>'));return; }
+    labels=labels||[];
     var byId={}; steps.forEach(function(s){byId[s.step_id]=s;});
     var passed=CHECKLIST.filter(function(c){return byId[c.id]&&byId[c.id].review_status==="pass";}).length;
     var container=el('<div></div>');
@@ -237,6 +239,8 @@
       '<button class="btn warn small" id="failBuild">Mark needs fix</button>'+
       '<button class="btn ghost small" id="runAi">🤖 Run AI check</button></div>'+
       '<div class="savenote" id="aiStat"></div></div>'));
+
+    container.appendChild(labelsCard(b,labels));
 
     CHECKLIST.forEach(function(c){
       var s=byId[c.id];
@@ -294,6 +298,55 @@
   }
   function setBuildStatus(id,status){
     patch("builds","id=eq."+id,{status:status,updated_at:new Date().toISOString()}).then(function(){ /* poll refreshes */ });
+  }
+
+  /* ---------- Crate labels (reviewer attaches downloadable files per machine) ---------- */
+  function sanitizeLabelName(s){ return String(s||"label").replace(/[^A-Za-z0-9._-]+/g,"_").replace(/^_+|_+$/g,"")||"label"; }
+  function labelsCard(b,labels){
+    var card=el('<div class="card"><h2 class="title">Crate labels</h2>'+
+      '<p class="hint">Attach label files (PDF or image) to this machine. The builder can download them from their app.</p>'+
+      '<div id="ll" style="margin:2px 0 12px"></div>'+
+      '<button class="btn ghost small" id="addLbl">＋ Add label</button>'+
+      '<input type="file" accept="image/*,application/pdf" multiple id="lblInput" style="display:none">'+
+      '<div class="savenote" id="lblNote"></div></div>');
+    var list=card.querySelector("#ll"), input=card.querySelector("#lblInput"), addBtn=card.querySelector("#addLbl"), note=card.querySelector("#lblNote");
+    function emptyMsg(){ return el('<div class="hint" style="margin:0">No labels yet.</div>'); }
+    function row(l){
+      var nm=l.name||(l.file_path||"").split("/").pop();
+      var r=el('<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)">'+
+        '<a href="'+pub("labels",l.file_path)+'" target="_blank" rel="noopener" download="'+esc(nm)+'" '+
+          'style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--brand);font-weight:600;text-decoration:none">⬇︎ '+esc(nm)+'</a>'+
+        '<button class="btn warn small">Delete</button></div>');
+      r.querySelector("button").addEventListener("click",function(){
+        if(!confirm("Delete “"+nm+"”?")) return;
+        note.textContent="Deleting…";
+        Promise.all([
+          rest("crate_labels?id=eq."+l.id,{method:"DELETE",headers:h()}),
+          fetch(SUPABASE_URL+"/storage/v1/object/labels/"+l.file_path,{method:"DELETE",headers:h()})
+        ]).then(function(){ r.remove(); note.textContent=""; if(!list.querySelector("a")) list.appendChild(emptyMsg()); },
+          function(e){ note.textContent="Failed — "+(e.message||""); });
+      });
+      return r;
+    }
+    if(!labels.length) list.appendChild(emptyMsg());
+    labels.forEach(function(l){ list.appendChild(row(l)); });
+    addBtn.addEventListener("click",function(){ input.click(); });
+    input.addEventListener("change",function(){
+      var files=[].slice.call(input.files||[]); if(!files.length) return;
+      var em=list.querySelector(".hint"); if(em) em.remove();
+      var i=0, errs=0;
+      (function next(){
+        if(i>=files.length){ note.textContent=errs?(errs+" failed"):"Saved ✓"; input.value=""; return; }
+        var f=files[i++]; note.textContent="Uploading "+f.name+" ("+i+"/"+files.length+")…";
+        var path=b.id+"/"+Date.now()+"-"+sanitizeLabelName(f.name);
+        upload("labels",path,f).then(function(){
+          return rest("crate_labels",{method:"POST",headers:h({"Content-Type":"application/json",Prefer:"return=representation"}),
+            body:JSON.stringify({build_id:b.id,name:f.name,file_path:path,content_type:f.type||null})});
+        }).then(function(res){ list.appendChild(row((res&&res[0])||{id:"",name:f.name,file_path:path})); next(); },
+          function(e){ errs++; note.textContent="Failed "+f.name+" — "+(e.message||""); next(); });
+      })();
+    });
+    return card;
   }
 
   /* ---------- Reference guide upload ---------- */
