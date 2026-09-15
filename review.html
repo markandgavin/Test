@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f172a">
+<title>Build Review Dashboard</title>
+<style>
+  :root{
+    --bg:#f1f5f9;--card:#fff;--ink:#0f172a;--muted:#64748b;--line:#e2e8f0;
+    --brand:#2563eb;--brand-ink:#fff;--ok:#16a34a;--ok-bg:#dcfce7;
+    --danger:#dc2626;--danger-bg:#fee2e2;--warn-bg:#fef9c3;--warn-ink:#854d0e;
+    --shadow:0 1px 3px rgba(15,23,42,.08),0 1px 2px rgba(15,23,42,.06);
+  }
+  *{box-sizing:border-box}html,body{margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.45;-webkit-text-size-adjust:100%}
+  .app{max-width:760px;margin:0 auto;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+  header.bar{padding:14px 18px 0}
+  .bar-row{display:flex;align-items:center;gap:10px}
+  header.bar h1{font-size:17px;margin:0;flex:1}
+  .link-btn{-webkit-appearance:none;appearance:none;background:none;border:none;color:var(--brand);font-size:15px;font-weight:600;cursor:pointer;padding:6px 4px}
+  .live{font-size:12px;color:var(--muted)}
+  .tabs{display:flex;gap:8px;padding:12px 18px 0}
+  .tab{flex:1;text-align:center;padding:10px;border-radius:10px;border:1.5px solid var(--line);background:#fff;font-weight:600;font-size:14px;cursor:pointer;color:var(--muted)}
+  .tab.on{background:var(--brand);border-color:var(--brand);color:#fff}
+  main{flex:1;padding:14px 18px 22px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:18px}
+  .card+.card{margin-top:12px}
+  h2.title{margin:0 0 4px;font-size:20px}
+  p.hint{margin:0 0 14px;color:var(--muted);font-size:14px}
+  .banner{border-radius:12px;padding:12px 14px;font-size:13.5px;margin-bottom:12px}
+  .banner.err{background:var(--danger-bg);color:var(--danger)}
+  .banner .as-link{font-weight:700;text-decoration:underline;cursor:pointer}
+  .btn{-webkit-appearance:none;appearance:none;border:none;border-radius:10px;font-size:15px;font-weight:600;padding:12px 14px;cursor:pointer;text-align:center}
+  .btn.primary{background:var(--brand);color:#fff}.btn.ghost{background:#fff;color:var(--ink);border:1.5px solid var(--line)}
+  .btn.ok{background:var(--ok);color:#fff}.btn.warn{background:var(--danger);color:#fff}
+  .btn.small{font-size:13px;padding:9px 12px}
+  .blist{display:flex;flex-direction:column;gap:10px}
+  .brow{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:12px 14px;cursor:pointer}
+  .ring{flex:none;width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--brand);background:conic-gradient(var(--brand) var(--pct,0%),var(--line) 0)}
+  .ring span{width:33px;height:33px;border-radius:50%;background:var(--card);display:flex;align-items:center;justify-content:center}
+  .brow .meta{flex:1;min-width:0}.brow .site{font-size:16px;font-weight:700}
+  .brow .sub{color:var(--muted);font-size:13px}
+  .pill{font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap}
+  .pill.in_progress{background:#e0e7ff;color:#3730a3}.pill.submitted{background:var(--warn-bg);color:var(--warn-ink)}
+  .pill.passed{background:var(--ok-bg);color:var(--ok)}.pill.needs_fix{background:var(--danger-bg);color:var(--danger)}
+  .empty{text-align:center;color:var(--muted);padding:36px 16px}
+  .spinner{width:24px;height:24px;border:3px solid var(--line);border-top-color:var(--brand);border-radius:50%;animation:spin .8s linear infinite;margin:26px auto}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  /* step review */
+  .step{border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-top:12px;background:#fff}
+  .step .head{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#f8fafc;border-bottom:1px solid var(--line)}
+  .step .head .lbl{font-weight:700}
+  .imgs{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line)}
+  .imgs figure{margin:0;background:#0b1220}
+  .imgs figcaption{font-size:11px;color:#cbd5e1;padding:4px 8px;background:#0f172a;text-transform:uppercase;letter-spacing:.4px}
+  .imgs img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;cursor:zoom-in;background:#0b1220}
+  .imgs .none{display:flex;align-items:center;justify-content:center;aspect-ratio:4/3;color:var(--muted);font-size:12px;background:#f1f5f9}
+  .ai{padding:10px 14px;font-size:13px;border-bottom:1px solid var(--line)}
+  .ai .tag{font-weight:700}
+  .ai.looks_good .tag{color:var(--ok)}.ai.possible_issues .tag{color:var(--warn-ink)}.ai.off{color:var(--muted)}
+  .rev{padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+  .revbtns{display:flex;gap:8px}.revbtns .btn{flex:1}
+  .revbtns .btn[aria-pressed=true].ok{outline:3px solid #86efac}
+  .revbtns .btn[aria-pressed=true].warn{outline:3px solid #fca5a5}
+  textarea{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:10px;font:inherit;font-size:14px;resize:vertical;min-height:44px}
+  .grow{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+  .gcard{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+  .gcard .gimg{aspect-ratio:4/3;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px}
+  .gcard .gimg img{width:100%;height:100%;object-fit:cover}
+  .gcard .gfoot{padding:8px 10px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .gcard .gfoot .n{font-weight:600;font-size:13px}
+  .gcard input[type=file]{display:none}
+  .zoom{position:fixed;inset:0;background:rgba(2,6,23,.94);display:flex;align-items:center;justify-content:center;z-index:50;padding:12px}
+  .zoom img{max-width:100%;max-height:100%;object-fit:contain}
+  .zoom .x{position:absolute;top:calc(12px + env(safe-area-inset-top));right:16px;color:#fff;font-size:30px;background:none;border:none;cursor:pointer}
+  .savenote{font-size:12px;color:var(--muted);min-height:15px}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="bar">
+    <div class="bar-row">
+      <button class="link-btn" id="backBtn" style="display:none">‹ Builds</button>
+      <h1>Build Review</h1>
+      <span class="live" id="live"></span>
+    </div>
+  </header>
+  <div class="tabs" id="tabs">
+    <div class="tab on" data-tab="reviews">Reviews</div>
+    <div class="tab" data-tab="guide">Reference guide</div>
+  </div>
+  <main id="screen"></main>
+</div>
+<script>
+(function(){
+  "use strict";
+  var SUPABASE_URL="https://wpniecetoljhdrrljcta.supabase.co";
+  var SUPABASE_ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbmllY2V0b2xqaGRycmxqY3RhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0MzA0ODgsImV4cCI6MjEwNTAwNjQ4OH0.m9jJlwy_EysIPAJMLdEcETFtaz2WdJop0Q1lhUElFnU";
+  var CHECKLIST=[
+    {id:"serial",label:"Serial number"},{id:"plaque",label:"Serial plaque"},
+    {id:"tray1",label:"Tray 1"},{id:"tray2",label:"Tray 2"},{id:"tray3",label:"Tray 3"},
+    {id:"tray4",label:"Tray 4"},{id:"tray5",label:"Tray 5"},
+    {id:"connectors",label:"Side connectors"},{id:"outside",label:"Outside of machine"}
+  ];
+  var TOTAL=CHECKLIST.length, MAX_EDGE=1800;
+
+  function h(x){return Object.assign({apikey:SUPABASE_ANON,Authorization:"Bearer "+SUPABASE_ANON},x||{});}
+  function rest(path,opts){return fetch(SUPABASE_URL+"/rest/v1/"+path,opts).then(function(r){if(!r.ok)return r.text().then(function(t){throw new Error("DB "+r.status+" "+t.slice(0,140));});return r.status===204?null:r.json();});}
+  function sel(p){return rest(p,{headers:h()});}
+  function patch(table,q,body){return rest(table+"?"+q,{method:"PATCH",headers:h({"Content-Type":"application/json",Prefer:"return=representation"}),body:JSON.stringify(body)});}
+  function upsert(table,row){return rest(table,{method:"POST",headers:h({"Content-Type":"application/json",Prefer:"resolution=merge-duplicates,return=representation"}),body:JSON.stringify(row)});}
+  function upload(bucket,path,blob){return fetch(SUPABASE_URL+"/storage/v1/object/"+bucket+"/"+path,{method:"POST",headers:h({"Content-Type":blob.type||"image/jpeg","x-upsert":"true"}),body:blob}).then(function(r){if(!r.ok)return r.text().then(function(t){throw new Error("Upload "+r.status+" "+t.slice(0,120));});return true;});}
+  function pub(bucket,path){return SUPABASE_URL+"/storage/v1/object/public/"+bucket+"/"+path;}
+
+  var screen=document.getElementById("screen"),liveEl=document.getElementById("live"),backBtn=document.getElementById("backBtn");
+  var tab="reviews", openId=null, poll=null, guide={};
+  function el(s){var t=document.createElement("template");t.innerHTML=s.trim();return t.content.firstElementChild;}
+  function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+  function fmt(ms){try{return new Date(ms).toLocaleString();}catch(e){return"";}}
+  function openZoom(src){var z=el('<div class="zoom"><button class="x">×</button><img></div>');z.querySelector("img").src=src;z.addEventListener("click",function(){z.remove();});z.querySelector("img").addEventListener("click",function(e){e.stopPropagation();});document.body.appendChild(z);}
+  function stopPoll(){ if(poll){clearInterval(poll);poll=null;} }
+
+  document.getElementById("tabs").addEventListener("click",function(e){
+    var t=e.target.closest(".tab"); if(!t)return;
+    tab=t.getAttribute("data-tab"); openId=null;
+    [].forEach.call(document.querySelectorAll(".tab"),function(x){x.classList.toggle("on",x===t);});
+    route();
+  });
+  backBtn.addEventListener("click",function(){ openId=null; route(); });
+
+  function route(){
+    stopPoll(); backBtn.style.display=(openId?"":"none"); liveEl.textContent="";
+    document.getElementById("tabs").style.display=(openId?"none":"flex");
+    if(tab==="guide") return renderGuide();
+    if(openId) return renderBuild(openId);
+    return renderList();
+  }
+
+  /* ---------- Reviews list (polling) ---------- */
+  function renderList(){
+    screen.innerHTML="";screen.appendChild(el('<div class="spinner"></div>'));
+    var first=true;
+    function load(){
+      sel("builds?select=id,site_number,employee,status,updated_at,build_steps(step_id)&order=updated_at.desc").then(function(rows){
+        liveEl.textContent="live · "+new Date().toLocaleTimeString();
+        paintList(rows);
+      },function(err){ if(first) paintList(null,err); });
+      first=false;
+    }
+    load(); poll=setInterval(load,5000);
+  }
+  function paintList(rows,err){
+    if(openId) return; // navigated away
+    screen.innerHTML="";var wrap=el("<div></div>");
+    if(err){var b=el('<div class="banner err">Couldn’t reach the server ('+esc(err.message||"network")+'). <span class="as-link" id="r">Retry</span></div>');b.querySelector("#r").addEventListener("click",route);wrap.appendChild(b);}
+    if(rows&&rows.length){
+      var list=el('<div class="blist"></div>');
+      rows.forEach(function(b){
+        var done=(b.build_steps||[]).length,pct=Math.round(done/TOTAL*100);
+        var row=el('<div class="brow">'+
+          '<div class="ring" style="--pct:'+pct+'%"><span>'+done+'/'+TOTAL+'</span></div>'+
+          '<div class="meta"><div class="site">Site '+esc(b.site_number||"—")+'</div>'+
+          '<div class="sub">'+esc(b.employee||"—")+' · '+fmt(b.updated_at)+'</div></div>'+
+          '<span class="pill '+esc(b.status)+'">'+esc((b.status||"").replace("_"," "))+'</span></div>');
+        row.addEventListener("click",function(){ openId=b.id; route(); });
+        list.appendChild(row);
+      });
+      wrap.appendChild(list);
+    } else if(rows){ wrap.appendChild(el('<div class="empty">No builds submitted yet.</div>')); }
+    screen.appendChild(wrap);
+  }
+
+  /* ---------- Build detail (polling + review actions) ---------- */
+  function renderBuild(id){
+    screen.innerHTML="";screen.appendChild(el('<div class="spinner"></div>'));
+    var first=true;
+    function load(){
+      Promise.all([ sel("builds?id=eq."+id+"&select=*"), sel("build_steps?build_id=eq."+id+"&select=*") ]).then(function(res){
+        liveEl.textContent="live · "+new Date().toLocaleTimeString();
+        paintBuild(res[0]&&res[0][0], res[1]||[]);
+      },function(err){ if(first){screen.innerHTML="";screen.appendChild(el('<div class="banner err">'+esc(err.message||"error")+'</div>'));} });
+      first=false;
+    }
+    load(); poll=setInterval(load,5000);
+  }
+  function paintBuild(b,steps){
+    if(!openId) return;
+    if(!b){ screen.innerHTML="";screen.appendChild(el('<div class="empty">Build not found.</div>'));return; }
+    var byId={}; steps.forEach(function(s){byId[s.step_id]=s;});
+    var passed=CHECKLIST.filter(function(c){return byId[c.id]&&byId[c.id].review_status==="pass";}).length;
+    var container=el('<div></div>');
+    container.appendChild(el('<div class="card"><h2 class="title">Site '+esc(b.site_number||"—")+'</h2>'+
+      '<p class="hint">'+esc(b.employee||"—")+' · '+esc((b.status||"").replace("_"," "))+' · '+passed+'/'+TOTAL+' passed · updated '+fmt(b.updated_at)+'</p>'+
+      '<div style="display:flex;gap:8px"><button class="btn ok small" id="passAll">Mark build passed</button>'+
+      '<button class="btn warn small" id="failBuild">Mark needs fix</button></div></div>'));
+
+    CHECKLIST.forEach(function(c){
+      var s=byId[c.id];
+      var empImg=s&&s.photo_path?'<img src="'+pub("photos",s.photo_path)+'" data-z="'+pub("photos",s.photo_path)+'">':'<div class="none">No photo yet</div>';
+      var refImg=guide[c.id]?'<img src="'+pub("guide",guide[c.id])+'" data-z="'+pub("guide",guide[c.id])+'">':'<div class="none">No reference</div>';
+      var rs=(s&&s.review_status)||"pending";
+      var ai=s&&s.ai_verdict;
+      var aiHtml=ai
+        ? '<div class="ai '+esc(ai)+'"><span class="tag">AI: '+esc(ai.replace("_"," "))+'</span> — '+esc(s.ai_notes||"")+'</div>'
+        : '<div class="ai off">AI check: not run (AI is currently off)</div>';
+      var step=el('<div class="step" data-step="'+c.id+'">'+
+        '<div class="head"><span class="lbl">'+esc(c.label)+'</span>'+
+        '<span class="pill '+(rs==="pass"?"passed":rs==="needs_fix"?"needs_fix":"submitted")+'">'+esc(rs.replace("_"," "))+'</span></div>'+
+        '<div class="imgs"><figure><figcaption>Their build</figcaption>'+empImg+'</figure>'+
+        '<figure><figcaption>Reference</figcaption>'+refImg+'</figure></div>'+
+        aiHtml+
+        '<div class="rev"><div class="revbtns">'+
+          '<button class="btn ok small" data-act="pass" aria-pressed="'+(rs==="pass")+'">✓ Pass</button>'+
+          '<button class="btn warn small" data-act="needs_fix" aria-pressed="'+(rs==="needs_fix")+'">✗ Needs fix</button></div>'+
+          '<textarea placeholder="Note to the builder (optional)">'+esc((s&&s.review_note)||"")+'</textarea>'+
+          '<div class="savenote"></div></div></div>');
+      step.querySelectorAll("img[data-z]").forEach(function(im){im.addEventListener("click",function(){openZoom(im.getAttribute("data-z"));});});
+      var note=step.querySelector("textarea"), sn=step.querySelector(".savenote");
+      function saveReview(status){
+        sn.textContent="Saving…";
+        upsert("build_steps",{build_id:b.id,step_id:c.id,label:c.label,review_status:status,review_note:note.value,updated_at:new Date().toISOString()}).then(function(){
+          sn.textContent="Saved ✓";
+          step.querySelectorAll("[data-act]").forEach(function(bt){bt.setAttribute("aria-pressed",String(bt.getAttribute("data-act")===status));});
+          var pill=step.querySelector(".head .pill"); pill.className="pill "+(status==="pass"?"passed":"needs_fix"); pill.textContent=status.replace("_"," ");
+        },function(e){ sn.textContent="Failed — "+(e.message||""); });
+      }
+      step.querySelectorAll("[data-act]").forEach(function(bt){ bt.addEventListener("click",function(){ saveReview(bt.getAttribute("data-act")); }); });
+      note.addEventListener("blur",function(){ if(s&&s.review_status&&s.review_status!=="pending") saveReview(s.review_status); });
+      container.appendChild(step);
+    });
+
+    container.querySelector("#passAll").addEventListener("click",function(){ setBuildStatus(b.id,"passed"); });
+    container.querySelector("#failBuild").addEventListener("click",function(){ setBuildStatus(b.id,"needs_fix"); });
+    screen.innerHTML="";screen.appendChild(container);
+  }
+  function setBuildStatus(id,status){
+    patch("builds","id=eq."+id,{status:status,updated_at:new Date().toISOString()}).then(function(){ /* poll refreshes */ });
+  }
+
+  /* ---------- Reference guide upload ---------- */
+  function renderGuide(){
+    screen.innerHTML="";screen.appendChild(el('<div class="spinner"></div>'));
+    loadGuide().then(function(){
+      var wrap=el('<div class="card"><h2 class="title">Reference guide</h2><p class="hint">Upload the build reference for each step. Employees see these while building. Trays 1–5 are the key ones.</p><div class="grow" id="g"></div></div>');
+      var g=wrap.querySelector("#g");
+      CHECKLIST.forEach(function(c){
+        var cur=guide[c.id];
+        var card=el('<div class="gcard"><div class="gimg">'+(cur?'<img src="'+pub("guide",cur)+'">':'None')+'</div>'+
+          '<div class="gfoot"><span class="n">'+esc(c.label)+'</span>'+
+          '<button class="btn ghost small">'+(cur?"Replace":"Upload")+'</button></div>'+
+          '<input type="file" accept="image/*"><div class="savenote" style="padding:0 10px 8px"></div></div>');
+        var input=card.querySelector("input"),btn=card.querySelector("button"),sn=card.querySelector(".savenote");
+        btn.addEventListener("click",function(){input.click();});
+        input.addEventListener("change",function(){
+          var f=input.files&&input.files[0]; if(!f)return;
+          sn.textContent="Uploading…";
+          toJpeg(f,function(blob){
+            if(!blob){sn.textContent="Bad image";return;}
+            var path=c.id+".jpg";
+            upload("guide",path,blob).then(function(){
+              return upsert("guide",{step_id:c.id,label:c.label,image_path:path,updated_at:new Date().toISOString()});
+            }).then(function(){ guide[c.id]=path; sn.textContent="Saved ✓";
+              card.querySelector(".gimg").innerHTML='<img src="'+pub("guide",path)+'?t='+Date.now()+'">'; btn.textContent="Replace";
+            },function(e){ sn.textContent="Failed — "+(e.message||""); });
+          });
+        });
+        g.appendChild(card);
+      });
+      screen.innerHTML="";screen.appendChild(wrap);
+    },function(err){ screen.innerHTML="";screen.appendChild(el('<div class="banner err">'+esc(err.message||"error")+'</div>')); });
+  }
+  function loadGuide(){ return sel("guide?select=step_id,image_path").then(function(rows){ guide={}; (rows||[]).forEach(function(r){ if(r.image_path) guide[r.step_id]=r.image_path; }); }); }
+  function toJpeg(file,cb){
+    var reader=new FileReader();
+    reader.onload=function(){var img=new Image();img.onload=function(){
+      var w=img.naturalWidth,ht=img.naturalHeight,s=Math.min(1,MAX_EDGE/Math.max(w,ht));
+      var cw=Math.max(1,Math.round(w*s)),ch=Math.max(1,Math.round(ht*s));
+      var c=document.createElement("canvas");c.width=cw;c.height=ch;c.getContext("2d").drawImage(img,0,0,cw,ch);
+      c.toBlob(function(b){cb(b);},"image/jpeg",0.85);
+    };img.onerror=function(){cb(null);};img.src=reader.result;};
+    reader.readAsDataURL(file);
+  }
+
+  // Load guide map once so build-detail can show references, then route.
+  loadGuide().catch(function(){}).then(route);
+})();
+</script>
+</body>
+</html>

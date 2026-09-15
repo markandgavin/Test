@@ -62,3 +62,28 @@ wizard and the PDF.
 The PDF is generated entirely in the browser with no external libraries. Photos are downscaled on
 capture (~1600px max edge) and re-encoded as JPEG, which embeds directly into the PDF — so the
 report is self-contained, works offline, and stays reasonably small.
+
+---
+
+# Machine Build system (employee + admin, shared via Supabase)
+
+A separate, cloud-backed system for guided machine assembly and live review. Unlike the on-device
+`index.html` above, these share data through a dedicated Supabase project so everyone sees the same
+builds.
+
+- **`build.html`** — the employee app. Enter name + site, then for each step (serial, plaque,
+  Tray 1–5, side connectors, outside) view the reference photo and upload a photo of your build.
+  Everything uploads to Supabase.
+- **`review.html`** — the admin dashboard. Watch builds come in live, open one to compare each
+  step's photo against the reference, and mark **Pass / Needs-fix** with notes. A **Reference
+  guide** tab lets the admin upload the reference image for each step once (all employees then see
+  them).
+
+**AI check (wired, off by default).** An `ai-check` Supabase Edge Function compares an employee's
+photo to the reference and writes a verdict. It stays dormant until `ANTHROPIC_API_KEY` is set as a
+function secret and `AI_ENABLED` is flipped to `true` at the top of both HTML files. Model defaults
+to `claude-opus-5` (override with the `AI_MODEL` function secret).
+
+Config (Supabase URL + anon key) lives at the top of `build.html` / `review.html`. Access is open
+(no login) for this internal tool; the anon key is public by design and fenced by row-level
+security.
