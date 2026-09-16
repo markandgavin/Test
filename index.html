@@ -268,13 +268,13 @@
     };
   }
   function allMachines() {
-    return sbRest("builds?kind=eq.final&select=id,site_number,serial_last6,status,created_at,updated_at,build_steps(step_id,photo_path)&order=updated_at.desc")
+    return sbRest("builds?kind=eq.final&select=id,site_number,serial_last6,status,created_at,updated_at,build_steps(step_id,photo_path)&order=updated_at.desc", { headers: sbH() })
       .then(function (rows) { return (rows || []).map(function (b) { return recFromRow(b, b.build_steps); }); });
   }
   function getMachine(id) {
     return Promise.all([
-      sbRest("builds?id=eq." + id + "&select=id,site_number,serial_last6,status,created_at,updated_at"),
-      sbRest("build_steps?build_id=eq." + id + "&select=step_id,photo_path")
+      sbRest("builds?id=eq." + id + "&select=id,site_number,serial_last6,status,created_at,updated_at", { headers: sbH() }),
+      sbRest("build_steps?build_id=eq." + id + "&select=step_id,photo_path", { headers: sbH() })
     ]).then(function (res) { var b = res[0] && res[0][0]; return b ? recFromRow(b, res[1]) : null; });
   }
   function createMachine() {
