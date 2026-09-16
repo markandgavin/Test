@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f172a">
+<title>Machine Build Checklist</title>
+<style>
+  :root{
+    --bg:#f1f5f9;--card:#fff;--ink:#0f172a;--muted:#64748b;--line:#e2e8f0;
+    --brand:#2563eb;--brand-ink:#fff;--ok:#16a34a;--ok-bg:#dcfce7;
+    --danger:#dc2626;--danger-bg:#fee2e2;--warn-bg:#fef9c3;--warn-ink:#854d0e;
+    --shadow:0 1px 3px rgba(15,23,42,.08),0 1px 2px rgba(15,23,42,.06);
+  }
+  *{box-sizing:border-box}html,body{margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.45;-webkit-text-size-adjust:100%}
+  .app{max-width:600px;margin:0 auto;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+  header.bar{padding:16px 18px 12px}
+  .bar-row{display:flex;align-items:center;gap:10px}
+  header.bar h1{font-size:17px;margin:0;letter-spacing:.2px;flex:1}
+  .link-btn{-webkit-appearance:none;appearance:none;background:none;border:none;color:var(--brand);font-size:15px;font-weight:600;cursor:pointer;padding:6px 4px}
+  .save-status{font-size:12px;color:var(--muted);min-height:15px;margin-top:6px}
+  .save-status.err{color:var(--danger)}.save-status.ok{color:var(--ok)}
+  .progress{margin-top:8px;display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px}
+  .progress .track{flex:1;height:6px;border-radius:999px;background:var(--line);overflow:hidden}
+  .progress .fill{height:100%;width:0;background:var(--brand);border-radius:999px;transition:width .25s}
+  main{flex:1;padding:6px 18px 20px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:20px}
+  .card+.card{margin-top:14px}
+  .step-label{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--brand);margin:0 0 4px}
+  h2.title{margin:0 0 4px;font-size:22px}h2.title.big{font-size:26px}
+  p.hint{margin:0 0 16px;color:var(--muted);font-size:14px}
+  label.field{display:block;font-size:14px;font-weight:600;margin:0 0 6px}
+  input[type=text]{width:100%;font-size:18px;padding:14px;border:1.5px solid var(--line);border-radius:12px;background:#fff;color:var(--ink);outline:none}
+  input.hero{font-size:24px;padding:16px;text-align:center;font-weight:700}
+  input:focus{border-color:var(--brand)}
+  .mono{font-variant-ligatures:none;letter-spacing:.5px}
+  .error{color:var(--danger);font-size:13px;margin:8px 0 0;min-height:16px}
+  .btn{-webkit-appearance:none;appearance:none;border:none;border-radius:12px;font-size:16px;font-weight:600;padding:15px 18px;cursor:pointer;width:100%;text-align:center}
+  .btn:disabled{opacity:.45;cursor:default}
+  .btn.primary{background:var(--brand);color:var(--brand-ink)}
+  .btn.ghost{background:#fff;color:var(--ink);border:1.5px solid var(--line)}
+  .btn.ok{background:var(--ok);color:#fff}
+  .btn.small{width:auto;padding:11px 16px;font-size:14px}
+  .nav{display:flex;gap:12px;margin-top:18px}.nav .btn{flex:1}
+  /* reference */
+  .ref{margin:0 0 14px;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#0b1220}
+  .ref .refcap{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#0f172a;color:#e2e8f0;font-size:13px;font-weight:600}
+  .ref img{display:block;width:100%;max-height:52vh;object-fit:contain;background:#0b1220;cursor:zoom-in}
+  .ref .noref{padding:16px;color:var(--muted);font-size:13px;text-align:center;background:#f8fafc}
+  /* capture */
+  .capture{margin-top:6px}
+  .capture input[type=file]{display:none}
+  .preview{width:100%;aspect-ratio:4/3;border-radius:14px;border:1.5px dashed var(--line);background:#f8fafc;display:flex;align-items:center;justify-content:center;color:var(--muted);overflow:hidden;text-align:center;padding:12px;font-size:14px}
+  .preview img{width:100%;height:100%;object-fit:cover}
+  .preview.filled{border-style:solid;border-color:var(--ok)}
+  .upstat{font-size:12px;margin-top:8px;min-height:15px;color:var(--muted)}
+  .upstat.ok{color:var(--ok)}.upstat.err{color:var(--danger)}
+  /* home list */
+  .home-head{display:flex;align-items:baseline;justify-content:space-between;margin:4px 2px 14px}
+  .home-head h2{margin:0;font-size:22px}.home-head .count{color:var(--muted);font-size:14px}
+  .banner{border-radius:12px;padding:12px 14px;font-size:13.5px;margin-bottom:14px}
+  .banner.err{background:var(--danger-bg);color:var(--danger)}
+  .banner .as-link{font-weight:700;text-decoration:underline;cursor:pointer}
+  .blist{display:flex;flex-direction:column;gap:12px}
+  .brow{display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:14px}
+  .brow .open{flex:1;display:flex;align-items:center;gap:14px;cursor:pointer;min-width:0}
+  .ring{flex:none;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--brand);background:conic-gradient(var(--brand) var(--pct,0%),var(--line) 0)}
+  .ring span{width:38px;height:38px;border-radius:50%;background:var(--card);display:flex;align-items:center;justify-content:center}
+  .brow .meta{min-width:0}.brow .site{font-size:17px;font-weight:700}
+  .brow .sub{color:var(--muted);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pill{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px}
+  .pill.in_progress{background:#e0e7ff;color:#3730a3}
+  .pill.submitted{background:var(--warn-bg);color:var(--warn-ink)}
+  .pill.passed{background:var(--ok-bg);color:var(--ok)}
+  .pill.needs_fix{background:var(--danger-bg);color:var(--danger)}
+  .empty{text-align:center;color:var(--muted);padding:36px 16px}
+  .spinner{width:26px;height:26px;border:3px solid var(--line);border-top-color:var(--brand);border-radius:50%;animation:spin .8s linear infinite;margin:30px auto}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .fab-row{margin-top:16px}
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:16px}
+  .tile{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+  .tile .thumb{aspect-ratio:4/3;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px}
+  .tile .thumb img{width:100%;height:100%;object-fit:cover}
+  .tile .cap{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;font-size:13px;font-weight:600}
+  .badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px}
+  .badge.have{background:var(--ok-bg);color:var(--ok)}.badge.missing{background:var(--danger-bg);color:var(--danger)}
+  /* zoom overlay */
+  .zoom{position:fixed;inset:0;background:rgba(2,6,23,.94);display:flex;align-items:center;justify-content:center;z-index:50;padding:12px}
+  .zoom img{max-width:100%;max-height:100%;object-fit:contain}
+  .zoom .x{position:absolute;top:calc(12px + env(safe-area-inset-top));right:16px;color:#fff;font-size:30px;background:none;border:none;cursor:pointer;line-height:1}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header class="bar">
+    <div class="bar-row">
+      <button class="link-btn" id="homeBtn" style="display:none">‹ Builds</button>
+      <h1>Machine Build Checklist</h1>
+    </div>
+    <div class="save-status" id="saveStatus"></div>
+    <div class="progress" id="progressWrap" style="display:none"><span id="stepCount">Start</span><span class="track"><span class="fill" id="progressFill"></span></span></div>
+  </header>
+  <main id="screen"></main>
+</div>
+<script>
+(function(){
+  "use strict";
+
+  /* ============ CONFIG ============ */
+  var SUPABASE_URL  = "https://wpniecetoljhdrrljcta.supabase.co";
+  var SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbmllY2V0b2xqaGRycmxqY3RhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0MzA0ODgsImV4cCI6MjEwNTAwNjQ4OH0.m9jJlwy_EysIPAJMLdEcETFtaz2WdJop0Q1lhUElFnU";
+  // AI photo-vs-reference check is fully wired but OFF for now.
+  // Flip to true AFTER deploying the ai-check function and setting the API key.
+  var AI_ENABLED = false; // AI runs from the admin dashboard (review.html), which holds the key
+
+  // Steps. Trays (and any step) show a reference image if the admin has uploaded one.
+  var CHECKLIST = [
+    { id:"serial",     label:"Serial number plaque" },
+    { id:"tray1",      label:"Tray 1" },
+    { id:"tray2",      label:"Tray 2" },
+    { id:"tray3",      label:"Tray 3" },
+    { id:"tray4",      label:"Tray 4" },
+    { id:"tray5",      label:"Tray 5" },
+    { id:"railpos",    label:"Rail positions" },
+    { id:"connectors", label:"Side connectors" },
+    { id:"badge_serial", label:"Badge reader serial number" },
+    { id:"badge_scanner", label:"Badge reader & barcode scanner (front view)" },
+    { id:"outside",    label:"Outside of machine" },
+    { id:"peplink",    label:"Peplink (optional)",    soft:true },
+    { id:"optconnect", label:"OptConnect (optional)", soft:true },
+    { id:"nuc",        label:"Nuc (optional)",        soft:true },
+    { id:"keys",       label:"Keys (optional)",       soft:true }
+  ];
+  var MAX_EDGE = 1600;
+  var TOTAL = CHECKLIST.length;
+
+  /* ============ Supabase REST/Storage helpers ============ */
+  function h(extra){ return Object.assign({ apikey:SUPABASE_ANON, Authorization:"Bearer "+SUPABASE_ANON }, extra||{}); }
+  function rest(path, opts){
+    return fetch(SUPABASE_URL+"/rest/v1/"+path, opts).then(function(r){
+      if(!r.ok) return r.text().then(function(t){ throw new Error("DB "+r.status+" "+t.slice(0,140)); });
+      return r.status===204 ? null : r.json();
+    });
+  }
+  function sbSelect(path){ return rest(path, { headers:h() }); }
+  function sbInsert(table, row, prefer){
+    return rest(table, { method:"POST", headers:h({ "Content-Type":"application/json", Prefer:(prefer||"return=representation") }), body:JSON.stringify(row) });
+  }
+  function sbUpsert(table, row, onConflict){
+    var q = onConflict ? ("?on_conflict="+onConflict) : "";
+    return rest(table+q, { method:"POST", headers:h({ "Content-Type":"application/json", Prefer:"resolution=merge-duplicates,return=representation" }), body:JSON.stringify(row) });
+  }
+  function sbPatch(table, query, patch){
+    return rest(table+"?"+query, { method:"PATCH", headers:h({ "Content-Type":"application/json", Prefer:"return=representation" }), body:JSON.stringify(patch) });
+  }
+  function storageUpload(bucket, path, blob){
+    return fetch(SUPABASE_URL+"/storage/v1/object/"+bucket+"/"+path, {
+      method:"POST", headers:h({ "Content-Type":blob.type||"image/jpeg", "x-upsert":"true" }), body:blob
+    }).then(function(r){ if(!r.ok) return r.text().then(function(t){ throw new Error("Upload "+r.status+" "+t.slice(0,120)); }); return true; });
+  }
+  function publicUrl(bucket, path){ return SUPABASE_URL+"/storage/v1/object/public/"+bucket+"/"+path; }
+
+  /* ============ AI (wired, gated by AI_ENABLED) ============ */
+  function aiCheck(buildId, stepId){
+    if(!AI_ENABLED) return Promise.resolve(null);          // OFF: no-op for now
+    return fetch(SUPABASE_URL+"/functions/v1/ai-check", {
+      method:"POST", headers:h({ "Content-Type":"application/json" }),
+      body:JSON.stringify({ build_id:buildId, step_id:stepId })
+    }).then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; });
+  }
+
+  /* ============ State / nav ============ */
+  var current=null;         // { id, employee, siteNumber, status, photos:{stepId:{dataURL,path}} }
+  var idx=0;                // -1 = new-build form, 0..TOTAL-1 = steps, TOTAL = review
+  var guide={};             // stepId -> image_path
+  var view="home";
+
+  var screen=document.getElementById("screen");
+  var stepCount=document.getElementById("stepCount");
+  var progressFill=document.getElementById("progressFill");
+  var progressWrap=document.getElementById("progressWrap");
+  var homeBtn=document.getElementById("homeBtn");
+  homeBtn.addEventListener("click",goHome);
+
+  function el(s){var t=document.createElement("template");t.innerHTML=s.trim();return t.content.firstElementChild;}
+  function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+  function fmtDate(ms){try{return new Date(ms).toLocaleDateString();}catch(e){return"";}}
+  function setStatus(m,k){saveStatus.textContent=m||"";saveStatus.className="save-status"+(k?" "+k:"");}
+  var saveStatus=document.getElementById("saveStatus");
+
+  function fileToJpeg(file,cb){
+    var reader=new FileReader();
+    reader.onload=function(){
+      var img=new Image();
+      img.onload=function(){
+        var w=img.naturalWidth,ht=img.naturalHeight,s=Math.min(1,MAX_EDGE/Math.max(w,ht));
+        var cw=Math.max(1,Math.round(w*s)),ch=Math.max(1,Math.round(ht*s));
+        var c=document.createElement("canvas");c.width=cw;c.height=ch;c.getContext("2d").drawImage(img,0,0,cw,ch);
+        c.toBlob(function(blob){ cb(blob, c.toDataURL("image/jpeg",0.82)); },"image/jpeg",0.82);
+      };
+      img.onerror=function(){cb(null,reader.result);};
+      img.src=reader.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function progress(){
+    if(idx>=TOTAL) stepCount.textContent="Review";
+    else if(idx<0) stepCount.textContent="New build";
+    else stepCount.textContent="Step "+(idx+1)+" of "+TOTAL;
+    var pct=idx<0?0:Math.min(100,Math.round((idx/(TOTAL))*100));
+    progressFill.style.width=pct+"%";
+  }
+  function goHome(){ view="home";current=null;homeBtn.style.display="none";progressWrap.style.display="none";setStatus("");renderHome();scrollTo(0,0); }
+  function openBuild(rec,at){ view="build";current=rec;idx=at;homeBtn.style.display="";progressWrap.style.display=(at<0?"none":"");progress();render();scrollTo(0,0); }
+  function go(n){ idx=n;progressWrap.style.display=(n<0?"none":"");progress();render();scrollTo(0,0); }
+
+  function openZoom(src){
+    var z=el('<div class="zoom"><button class="x">×</button><img alt="reference"></div>');
+    z.querySelector("img").src=src;
+    function close(){z.remove();}
+    z.addEventListener("click",close);
+    z.querySelector("img").addEventListener("click",function(e){e.stopPropagation();});
+    document.body.appendChild(z);
+  }
+
+  /* ============ HOME ============ */
+  function getMyName(){ try{return localStorage.getItem("builder_name")||"";}catch(e){return "";} }
+  function setMyName(v){ try{ if(v) localStorage.setItem("builder_name",v); }catch(e){} }
+  var showMine=true;   // when a name is known, default to showing only that builder's machines
+
+  function renderHome(){
+    screen.innerHTML="";screen.appendChild(el('<div class="spinner"></div>'));
+    // builder checklist builds only (final QCs live in the review dashboard)
+    sbSelect("builds?kind=eq.builder&select=id,site_number,location,employee,status,updated_at,build_steps(step_id)&order=updated_at.desc").then(function(rows){
+      renderHomeList(rows,null);
+    },function(err){ renderHomeList(null,err); });
+  }
+  function renderHomeList(rows,err){
+    screen.innerHTML="";
+    var wrap=el("<div></div>");
+    if(err){
+      var eb=el('<div class="banner err">Couldn’t reach the server ('+esc(err.message||"network")+'). <span class="as-link" id="retry">Retry</span></div>');
+      eb.querySelector("#retry").addEventListener("click",renderHome);wrap.appendChild(eb);
+    }
+    var myName=getMyName();
+    if(rows && myName && showMine){
+      rows=rows.filter(function(b){ return (b.employee||"").trim().toLowerCase()===myName.trim().toLowerCase(); });
+    }
+    if(myName){
+      var bar=el('<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin:2px 2px 12px">'+
+        '<span style="font-size:13px;color:var(--muted)">'+(showMine?"Showing your machines · "+esc(myName):"Showing everyone’s machines")+'</span>'+
+        '<button class="as-link" id="tgl" style="background:none;border:none;color:var(--brand);font-weight:600;font-size:13px;cursor:pointer">'+(showMine?"Show all":"Only mine")+'</button></div>');
+      bar.querySelector("#tgl").addEventListener("click",function(){ showMine=!showMine; renderHome(); });
+      wrap.appendChild(bar);
+    }
+    var n=rows?rows.length:0;
+    wrap.appendChild(el('<div class="home-head"><h2>Builds</h2><span class="count">'+n+(n===1?" build":" builds")+'</span></div>'));
+    if(rows&&rows.length){
+      var list=el('<div class="blist"></div>');
+      rows.forEach(function(b){
+        var done=(b.build_steps||[]).length, pct=Math.round(done/TOTAL*100);
+        var row=el('<div class="brow"><div class="open">'+
+          '<div class="ring" style="--pct:'+pct+'%"><span>'+done+'/'+TOTAL+'</span></div>'+
+          '<div class="meta"><div class="site">Site '+esc(b.site_number||"—")+(b.location?' · '+esc(b.location):'')+'</div>'+
+          '<div class="sub">'+esc(b.employee||"—")+' · '+fmtDate(b.updated_at)+'</div></div></div>'+
+          '<span class="pill '+esc(b.status)+'">'+esc((b.status||"").replace("_"," "))+'</span></div>');
+        row.querySelector(".open").addEventListener("click",function(){ openById(b.id); });
+        list.appendChild(row);
+      });
+      wrap.appendChild(list);
+    } else if(rows){
+      wrap.appendChild(el('<div class="empty">No builds yet.<br>Tap “Start a build” to begin.</div>'));
+    }
+    var fab=el('<div class="fab-row"><button class="btn primary" id="newBtn">＋ Start a build</button></div>');
+    fab.querySelector("#newBtn").addEventListener("click",function(){ startNew(); });
+    wrap.appendChild(fab);
+    screen.appendChild(wrap);
+  }
+  function openById(id){
+    setStatus("Opening…");
+    Promise.all([
+      sbSelect("builds?id=eq."+id+"&select=*"),
+      sbSelect("build_steps?build_id=eq."+id+"&select=step_id,photo_path")
+    ]).then(function(res){
+      setStatus("");
+      var b=res[0]&&res[0][0]; if(!b){alert("Build not found");return goHome();}
+      var photos={}; (res[1]||[]).forEach(function(s){ photos[s.step_id]={path:s.photo_path,dataURL:publicUrl("photos",s.photo_path)}; });
+      openBuild({id:b.id,employee:b.employee,siteNumber:b.site_number,serialLast6:b.serial_last6||"",location:b.location||"",status:b.status,photos:photos}, TOTAL);
+    },function(e){ setStatus("Couldn’t open — "+(e.message||""),"err"); });
+  }
+  function startNew(){ openBuild({id:null,employee:"",siteNumber:"",serialLast6:"",status:"in_progress",photos:{}}, -1); }
+  function saveSerial(){
+    if(!current.id) return;
+    sbPatch("builds","id=eq."+current.id,{serial_last6:current.serialLast6||null,updated_at:new Date().toISOString()})
+      .then(function(){ setStatus("Saved ✓","ok"); }, function(){ setStatus("Serial not saved — check connection","err"); });
+  }
+
+  /* ============ NEW BUILD (name + site) ============ */
+  function renderNew(){
+    var card=el('<div class="card">'+
+      '<p class="step-label">New build</p><h2 class="title big">Who & where</h2>'+
+      '<p class="hint">Enter your name and the site number for this machine.</p>'+
+      '<label class="field" for="emp">Your name</label>'+
+      '<input type="text" id="emp" placeholder="e.g. Alex R." autocomplete="off">'+
+      '<div style="height:14px"></div>'+
+      '<label class="field" for="site">Site number</label>'+
+      '<input type="text" id="site" class="hero" placeholder="e.g. 82" autocomplete="off">'+
+      '<p class="error" id="err"></p>'+
+      '<div class="nav"><button class="btn ghost" id="back">Cancel</button><button class="btn primary" id="next">Start</button></div></div>');
+    var emp=card.querySelector("#emp"),site=card.querySelector("#site"),err=card.querySelector("#err");
+    emp.value=current.employee||getMyName();site.value=current.siteNumber;
+    card.querySelector("#back").addEventListener("click",goHome);
+    card.querySelector("#next").addEventListener("click",function(){
+      current.employee=emp.value.trim();current.siteNumber=site.value.trim();
+      if(!current.employee){err.textContent="Enter your name.";emp.focus();return;}
+      if(!current.siteNumber){err.textContent="Enter the site number.";site.focus();return;}
+      setMyName(current.employee);
+      setStatus("Starting…");
+      sbInsert("builds",{employee:current.employee,site_number:current.siteNumber,status:"in_progress"}).then(function(rows){
+        current.id=rows[0].id;setStatus("");go(0);
+      },function(e){ err.textContent="Couldn’t start — "+(e.message||""); setStatus("",""); });
+    });
+    screen.appendChild(card);emp.focus();
+  }
+
+  /* ============ STEP ============ */
+  function renderStep(i){
+    var item=CHECKLIST[i];
+    var card=el('<div class="card"><p class="step-label">Step '+(i+1)+' of '+TOTAL+'</p><h2 class="title">'+esc(item.label)+'</h2></div>');
+
+    // reference (if a guide image exists for this step)
+    if(guide[item.id]){
+      var ref=el('<div class="ref"><div class="refcap"><span>Reference — build yours to match</span><span>tap to zoom</span></div><img alt="reference"></div>');
+      ref.querySelector("img").src=publicUrl("guide",guide[item.id]);
+      ref.querySelector("img").addEventListener("click",function(){ openZoom(publicUrl("guide",guide[item.id])); });
+      card.appendChild(ref);
+    } else if(/^tray/.test(item.id)){
+      card.appendChild(el('<div class="ref"><div class="noref">Reference for '+esc(item.label)+' not uploaded yet.</div></div>'));
+    }
+
+    // serial: also type the last 6 (e.g. …v7), like the original QC
+    if(item.id==="serial"){
+      var sl=el('<div style="margin:2px 0 14px"><label class="field" for="last6">Last 6 of serial</label>'+
+        '<input type="text" id="last6" class="mono" maxlength="6" placeholder="e.g. 5930v7" autocomplete="off" autocapitalize="characters"></div>');
+      var last6=sl.querySelector("#last6"); last6.value=current.serialLast6||"";
+      last6.addEventListener("input",function(){ current.serialLast6=last6.value; });
+      last6.addEventListener("blur",function(){ current.serialLast6=last6.value.trim(); saveSerial(); });
+      card.appendChild(sl);
+    }
+
+    // capture — explicit camera + library options
+    var cap=el('<div class="capture"><div class="preview" id="prev">'+ (current.photos[item.id]?'':'Your build photo') +'</div>'+
+      '<input type="file" accept="image/*" capture="environment" id="fileCam">'+
+      '<input type="file" accept="image/*" id="fileLib">'+
+      '<div style="height:12px"></div>'+
+      '<div style="display:flex;gap:10px">'+
+        '<button class="btn ghost" id="takeCam" style="flex:1">📷 Take photo</button>'+
+        '<button class="btn ghost" id="takeLib" style="flex:1">🖼️ From library</button>'+
+      '</div>'+
+      '<div class="upstat" id="up"></div></div>');
+    var prev=cap.querySelector("#prev"),up=cap.querySelector("#up");
+    var fileCam=cap.querySelector("#fileCam"),fileLib=cap.querySelector("#fileLib");
+    if(current.photos[item.id]){ prev.classList.add("filled"); prev.innerHTML='<img alt="" src="'+current.photos[item.id].dataURL+'">'; }
+    cap.querySelector("#takeCam").addEventListener("click",function(){ fileCam.click(); });
+    cap.querySelector("#takeLib").addEventListener("click",function(){ fileLib.click(); });
+    function handleFile(f){
+      if(!f) return;
+      prev.classList.remove("filled");prev.textContent="Processing…";up.textContent="";up.className="upstat";
+      fileToJpeg(f,function(blob,dataURL){
+        prev.classList.add("filled");prev.innerHTML='<img alt="" src="'+dataURL+'">';
+        current.photos[item.id]={dataURL:dataURL,path:null};
+        if(!blob){ up.textContent="Couldn’t process image";up.className="upstat err";return; }
+        up.textContent="Uploading…";
+        var path=current.id+"/"+item.id+".jpg";
+        storageUpload("photos",path,blob).then(function(){
+          return sbUpsert("build_steps",{build_id:current.id,step_id:item.id,label:item.label,photo_path:path},"build_id,step_id");
+        }).then(function(){
+          current.photos[item.id].path=path; up.textContent="Uploaded ✓";up.className="upstat ok";
+          aiCheck(current.id,item.id); // no-op while AI is off
+        },function(e){ up.textContent="Upload failed — "+(e.message||"");up.className="upstat err"; });
+      });
+    }
+    fileCam.addEventListener("change",function(){ handleFile(fileCam.files&&fileCam.files[0]); });
+    fileLib.addEventListener("change",function(){ handleFile(fileLib.files&&fileLib.files[0]); });
+    card.appendChild(cap);
+
+    var isLast=i===TOTAL-1;
+    var nav=el('<div class="nav"><button class="btn ghost" id="back">Back</button><button class="btn primary" id="next">'+(isLast?"Review":"Next")+'</button></div>');
+    nav.querySelector("#back").addEventListener("click",function(){ if(item.id==="serial")saveSerial(); go(i-1); });
+    nav.querySelector("#next").addEventListener("click",function(){ if(item.id==="serial")saveSerial(); go(i+1); });
+    card.appendChild(nav);
+    screen.appendChild(card);
+  }
+
+  /* ============ REVIEW / SUBMIT ============ */
+  function renderReview(){
+    var tiles="";
+    CHECKLIST.forEach(function(s){
+      var has=!!current.photos[s.id];
+      var badge=has?'<span class="badge have">✓</span>':(s.soft?'<span class="badge" style="background:#f1f5f9;color:#64748b">optional</span>':'<span class="badge missing">missing</span>');
+      tiles+='<div class="tile" data-goto="'+s.id+'"><div class="thumb">'+(has?'<img alt="" src="'+current.photos[s.id].dataURL+'">':'No photo')+'</div>'+
+        '<div class="cap"><span>'+esc(s.label)+'</span>'+badge+'</div></div>';
+    });
+    var missing=CHECKLIST.filter(function(s){return !s.soft && !current.photos[s.id];}).length;
+    var card=el('<div class="card"><p class="step-label">Review</p><h2 class="title">Review &amp; submit</h2>'+
+      '<p class="hint">'+esc(current.employee)+' · Site '+esc(current.siteNumber)+(current.location?' · '+esc(current.location):'')+(current.serialLast6?' · SN …'+esc(current.serialLast6):'')+'</p>'+
+      '<div class="grid">'+tiles+'</div>'+
+      '<div id="empLabels" hidden style="margin-top:18px"></div>'+
+      (missing?'<p class="error" style="margin-top:14px">'+missing+' photo(s) still missing — tap a tile to add.</p>':'')+
+      '<div class="nav" style="margin-top:20px"><button class="btn ghost" id="back">Back</button><button class="btn ok" id="submit">Submit for review</button></div></div>');
+    card.querySelectorAll(".tile").forEach(function(t){ t.addEventListener("click",function(){ var i=CHECKLIST.findIndex(function(c){return c.id===t.getAttribute("data-goto");}); if(i>=0) go(i); }); });
+    if(current.id) loadEmpLabels(card.querySelector("#empLabels"), current.id);
+    card.querySelector("#back").addEventListener("click",function(){ go(TOTAL-1); });
+    card.querySelector("#submit").addEventListener("click",function(){
+      if(missing && !confirm(missing+" photo(s) missing. Submit anyway?")) return;
+      setStatus("Submitting…");
+      sbPatch("builds","id=eq."+current.id,{status:"submitted",updated_at:new Date().toISOString()}).then(function(){
+        setStatus("Submitted ✓","ok"); alert("Submitted for review. Thanks, "+current.employee+"!"); goHome();
+      },function(e){ setStatus("Submit failed — "+(e.message||""),"err"); });
+    });
+    screen.appendChild(card);
+  }
+
+  function loadEmpLabels(box, buildId){
+    sbSelect("crate_labels?build_id=eq."+buildId+"&select=name,file_path&order=created_at.asc").then(function(rows){
+      if(!rows||!rows.length) return;                 // nothing attached yet — stay hidden
+      var html='<h3 class="title" style="font-size:16px;margin:0 0 8px">Crate labels</h3>'+
+        '<p class="hint" style="margin:0 0 10px">Download the labels for this machine.</p>';
+      rows.forEach(function(l){
+        var nm=l.name||(l.file_path||"").split("/").pop();
+        html+='<a href="'+publicUrl("labels",l.file_path)+'" target="_blank" rel="noopener" download="'+esc(nm)+'" '+
+          'style="display:flex;align-items:center;gap:8px;padding:12px 14px;margin-bottom:8px;border:1.5px solid var(--line);border-radius:12px;color:var(--brand);font-weight:600;text-decoration:none">⬇︎ '+esc(nm)+'</a>';
+      });
+      box.innerHTML=html; box.hidden=false;
+    },function(){ /* ignore label load errors */ });
+  }
+
+  function render(){
+    screen.innerHTML="";
+    if(idx<0) return renderNew();
+    if(idx>=TOTAL) return renderReview();
+    return renderStep(idx);
+  }
+
+  /* ============ Boot ============ */
+  function boot(){
+    screen.innerHTML="";screen.appendChild(el('<div class="spinner"></div>'));
+    sbSelect("guide?select=step_id,image_path").then(function(rows){
+      (rows||[]).forEach(function(g){ if(g.image_path) guide[g.step_id]=g.image_path; });
+    }).catch(function(){}).then(function(){ goHome(); });
+  }
+  window.__buildqc={ config:function(){return{SUPABASE_URL:SUPABASE_URL,AI_ENABLED:AI_ENABLED};} };
+  boot();
+})();
+</script>
+</body>
+</html>
