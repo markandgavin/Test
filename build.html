@@ -126,7 +126,10 @@
     { id:"connectors", label:"Side connectors" },
     { id:"badge_serial", label:"Badge reader serial number" },
     { id:"badge_scanner", label:"Badge reader & barcode scanner (front view)" },
-    { id:"outside",    label:"Outside of machine" }
+    { id:"outside",    label:"Outside of machine" },
+    { id:"peplink",    label:"Peplink (optional)",    soft:true },
+    { id:"optconnect", label:"OptConnect (optional)", soft:true },
+    { id:"nuc",        label:"Nuc (optional)",        soft:true }
   ];
   var MAX_EDGE = 1600;
   var TOTAL = CHECKLIST.length;
@@ -395,10 +398,11 @@
     var tiles="";
     CHECKLIST.forEach(function(s){
       var has=!!current.photos[s.id];
+      var badge=has?'<span class="badge have">✓</span>':(s.soft?'<span class="badge" style="background:#f1f5f9;color:#64748b">optional</span>':'<span class="badge missing">missing</span>');
       tiles+='<div class="tile" data-goto="'+s.id+'"><div class="thumb">'+(has?'<img alt="" src="'+current.photos[s.id].dataURL+'">':'No photo')+'</div>'+
-        '<div class="cap"><span>'+esc(s.label)+'</span><span class="badge '+(has?"have":"missing")+'">'+(has?"✓":"missing")+'</span></div></div>';
+        '<div class="cap"><span>'+esc(s.label)+'</span>'+badge+'</div></div>';
     });
-    var missing=CHECKLIST.filter(function(s){return !current.photos[s.id];}).length;
+    var missing=CHECKLIST.filter(function(s){return !s.soft && !current.photos[s.id];}).length;
     var card=el('<div class="card"><p class="step-label">Review</p><h2 class="title">Review &amp; submit</h2>'+
       '<p class="hint">'+esc(current.employee)+' · Site '+esc(current.siteNumber)+(current.location?' · '+esc(current.location):'')+(current.serialLast6?' · SN …'+esc(current.serialLast6):'')+'</p>'+
       '<div class="grid">'+tiles+'</div>'+
